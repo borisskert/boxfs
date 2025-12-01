@@ -9,11 +9,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BoxFsFileSystem extends FileSystem {
+    private static final String SEPARATOR = "/";
+
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
+    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider();
 
     @Override
     public FileSystemProvider provider() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return provider;
     }
 
     @Override
@@ -53,7 +56,7 @@ public class BoxFsFileSystem extends FileSystem {
 
     @Override
     public Path getPath(String first, String... more) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return new BoxFsPath(this, SEPARATOR, first);
     }
 
     @Override
