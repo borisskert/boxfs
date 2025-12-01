@@ -92,6 +92,21 @@ abstract class FileSystemTest {
                     assertThat(Files.size(file)).isEqualTo(0);
                     assertThat(Files.isSameFile(file, file)).isTrue();
                 }
+
+                @Nested
+                class WriteToFile {
+                    @BeforeEach
+                    void setup() throws IOException {
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @Test
+                    void shouldWriteToFile() throws Exception {
+                        assertThat(Files.size(file)).isEqualTo(12);
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                    }
+                }
             }
         }
 

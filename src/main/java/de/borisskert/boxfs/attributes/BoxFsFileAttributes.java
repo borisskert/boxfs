@@ -2,8 +2,15 @@ package de.borisskert.boxfs.attributes;
 
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.function.Supplier;
 
 public class BoxFsFileAttributes implements BasicFileAttributes {
+    private final Supplier<Long> sizeSupplier;
+
+    public BoxFsFileAttributes(Supplier<Long> sizeSupplier) {
+        this.sizeSupplier = sizeSupplier;
+    }
+
     @Override
     public FileTime lastModifiedTime() {
         throw new UnsupportedOperationException("Not yet implemented");
@@ -41,7 +48,7 @@ public class BoxFsFileAttributes implements BasicFileAttributes {
 
     @Override
     public long size() {
-        return 0L;
+        return sizeSupplier.get();
     }
 
     @Override

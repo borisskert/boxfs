@@ -3,7 +3,7 @@ package de.borisskert.boxfs.attributes;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
-class BoxFsDirectoryAttributes implements BasicFileAttributes {
+public class BoxFsDirectoryAttributes implements BasicFileAttributes {
     @Override
     public FileTime lastModifiedTime() {
         throw new UnsupportedOperationException("Not yet implemented");

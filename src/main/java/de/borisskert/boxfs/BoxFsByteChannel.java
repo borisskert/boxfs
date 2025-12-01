@@ -1,21 +1,54 @@
 package de.borisskert.boxfs;
 
+import de.borisskert.boxfs.tree.BoxNode;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class BoxFsByteChannel implements SeekableByteChannel {
+class BoxFsByteChannel implements SeekableByteChannel {
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
+    private final AtomicInteger position = new AtomicInteger(0);
+
+    private final Path path;
+    private final BoxNode tree;
+
+    public BoxFsByteChannel(Path path, BoxNode tree) {
+        this.path = path;
+        this.tree = tree;
+    }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ensureOpen();
+
+        BoxNode file = tree.getChild(path);
+        byte[] content = file.content();
+        int size = (int) file.attributes().size();
+
+        if (position.get() >= size) {
+            return -1; // EOF
+        }
+
+        int bytesAvailable = size - position.get();
+        int bytesToRead = Math.min(bytesAvailable, dst.remaining());
+
+        dst.put(content, position.get(), bytesToRead);
+
+        position.set(position.get() + bytesToRead);
+
+        return bytesToRead;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        int bytes = src.remaining();  // entscheidend!
+        tree.getChild(path).writeContent(path, src);
+        return bytes;
     }
 
     @Override
@@ -30,7 +63,7 @@ public class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public long size() throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return tree.getChild(path).attributes().size();
     }
 
     @Override
@@ -46,5 +79,9 @@ public class BoxFsByteChannel implements SeekableByteChannel {
     @Override
     public void close() throws IOException {
         isOpen.set(false);
+    }
+
+    private void ensureOpen() throws ClosedChannelException {
+        if (!isOpen.get()) throw new ClosedChannelException();
     }
 }

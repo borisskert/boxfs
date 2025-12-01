@@ -1,6 +1,5 @@
 package de.borisskert.boxfs;
 
-import de.borisskert.boxfs.attributes.Attributes;
 import de.borisskert.boxfs.tree.BoxNode;
 
 import java.io.IOException;
@@ -46,7 +45,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         directories.createFile(path);
-        return new BoxFsByteChannel();
+        return new BoxFsByteChannel(path, directories);
     }
 
     @Override
@@ -110,11 +109,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
         if (directories.exists(path)) {
-            if (directories.isDirectory(path)) {
-                return Attributes.directory();
-            } else {
-                return Attributes.file();
-            }
+            return directories.getChild(path).attributes();
         } else {
             throw new NoSuchFileException(path.toString());
         }

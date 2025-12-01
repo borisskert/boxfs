@@ -1,6 +1,11 @@
 package de.borisskert.boxfs.tree;
 
+import de.borisskert.boxfs.attributes.BoxFsDirectoryAttributes;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,13 +14,16 @@ class BoxDirectory implements BoxNode {
     private final Map<String, BoxNode> children = new ConcurrentHashMap<>();
 
     private final String separator;
+    private final BasicFileAttributes attributes;
 
     BoxDirectory(String separator) {
         this.separator = separator;
+        this.attributes = new BoxFsDirectoryAttributes();
     }
 
     BoxDirectory(BoxDirectory parent) {
         this.separator = parent.separator;
+        this.attributes = new BoxFsDirectoryAttributes();
     }
 
     @Override
@@ -133,5 +141,22 @@ class BoxDirectory implements BoxNode {
         ).getChild(
                 path.subpath(1, path.getNameCount())
         );
+    }
+
+    @Override
+    public void writeContent(Path path, ByteBuffer buffer) {
+        throw new UnsupportedOperationException("Cannot write content to a directory");
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A attributes() {
+        @SuppressWarnings("unchecked")
+        A attrs = (A) attributes;
+        return attrs;
+    }
+
+    @Override
+    public byte[] content() throws IOException {
+        throw new UnsupportedOperationException("Cannot read content from a directory");
     }
 }
