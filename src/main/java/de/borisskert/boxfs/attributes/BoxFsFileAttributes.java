@@ -3,7 +3,7 @@ package de.borisskert.boxfs.attributes;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
-class NoSuchFileAttributes implements BasicFileAttributes {
+public class BoxFsFileAttributes implements BasicFileAttributes {
     @Override
     public FileTime lastModifiedTime() {
         throw new UnsupportedOperationException("Not yet implemented");
@@ -21,7 +21,7 @@ class NoSuchFileAttributes implements BasicFileAttributes {
 
     @Override
     public boolean isRegularFile() {
-        return false;
+        return true;
     }
 
     @Override
@@ -41,7 +41,7 @@ class NoSuchFileAttributes implements BasicFileAttributes {
 
     @Override
     public long size() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return 0L;
     }
 
     @Override

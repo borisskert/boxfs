@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 abstract class FileSystemTest {
 
@@ -36,6 +37,62 @@ abstract class FileSystemTest {
         void shouldCloseFileSystem() throws Exception {
             fs.close();
             assertThat(fs.isOpen()).isFalse();
+        }
+
+        @Nested
+        class SimpleFileTests {
+            String testFilePath = "/tmp/testfile.txt";
+            Path file;
+
+            @BeforeEach
+            void setup() throws IOException {
+                file = fs.getPath(testFilePath);
+            }
+
+            @Test
+            void shouldNotExist() throws Exception {
+                assertThat(Files.exists(file)).isFalse();
+                assertThat(Files.isDirectory(file)).isFalse();
+                assertThat(Files.notExists(file)).isTrue();
+                assertThat(Files.isRegularFile(file)).isFalse();
+                assertThat(Files.isHidden(file)).isFalse();
+                assertThat(Files.isSymbolicLink(file)).isFalse();
+                assertThat(Files.isReadable(file)).isFalse();
+                assertThat(Files.isWritable(file)).isFalse();
+                assertThat(Files.isExecutable(file)).isFalse();
+                assertThatThrownBy(() -> Files.size(file)).isInstanceOf(IOException.class);
+                assertThatThrownBy(() -> Files.readAttributes(file, "*")).isInstanceOf(IOException.class);
+                assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
+                assertThat(Files.isSameFile(file, file)).isTrue();
+            }
+
+            @Nested
+            class CreateFile {
+                @BeforeEach
+                void setup() throws IOException {
+                    Files.createFile(file);
+                }
+
+                @AfterEach
+                void teardown() throws IOException {
+                    Files.deleteIfExists(file);
+                }
+
+                @Test
+                void shouldCreateFile() throws Exception {
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.isDirectory(file)).isFalse();
+                    assertThat(Files.notExists(file)).isFalse();
+                    assertThat(Files.isRegularFile(file)).isTrue();
+                    assertThat(Files.isHidden(file)).isFalse();
+                    assertThat(Files.isSymbolicLink(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isTrue();
+                    assertThat(Files.isWritable(file)).isTrue();
+                    assertThat(Files.isExecutable(file)).isFalse();
+                    assertThat(Files.size(file)).isEqualTo(0);
+                    assertThat(Files.isSameFile(file, file)).isTrue();
+                }
+            }
         }
 
         @Nested

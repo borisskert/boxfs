@@ -12,9 +12,9 @@ public class Attributes {
         return attrs;
     }
 
-    public static <A extends BasicFileAttributes> A noSuchFile() {
+    public static <A extends BasicFileAttributes> A file() {
         @SuppressWarnings("unchecked")
-        A attrs = (A) new NoSuchFileAttributes();
+        A attrs = (A) new BoxFsFileAttributes();
         return attrs;
     }
 }
