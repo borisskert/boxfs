@@ -12,10 +12,13 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
-    private final Map<Path, Object> directories = new ConcurrentHashMap<>();
+    private final BoxNode directories;
+
+    BoxFsFileSystemProvider(String separator) {
+        this.directories = BoxNode.newTree(separator);
+    }
 
     @Override
     public String getScheme() {
@@ -49,12 +52,13 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        directories.put(dir, new Object());
+//        directories.put(dir, new Object());
+        directories.create(dir);
     }
 
     @Override
     public void delete(Path path) throws IOException {
-        directories.remove(path);
+        directories.delete(path);
     }
 
     @Override
@@ -84,7 +88,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-        if (!directories.containsKey(path)) {
+        if (!directories.exists(path)) {
             throw new NoSuchFileException(path.toString());
         }
     }
@@ -96,7 +100,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-        if (directories.containsKey(path)) {
+        if (directories.exists(path)) {
             return Attributes.directory();
         } else {
             return Attributes.noSuchFile();

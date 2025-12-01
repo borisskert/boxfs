@@ -12,7 +12,7 @@ public class BoxFsFileSystem extends FileSystem {
     private static final String SEPARATOR = "/";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
-    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider();
+    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(SEPARATOR);
 
     @Override
     public FileSystemProvider provider() {
