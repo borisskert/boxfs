@@ -3,15 +3,15 @@ package de.borisskert.boxfs;
 import de.borisskert.boxfs.tree.BoxNode;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -94,22 +94,24 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        HashSet<AccessMode> accessModes = new HashSet<>(Arrays.asList(modes));
+        BoxNode boxNode = directories.readNode(path);
+        BoxFsFileAttributeView view = boxNode.fileAttributeView();
 
-        if (directories.isFile(path) && accessModes.contains(AccessMode.EXECUTE)) {
+        if (!isAllowed(view.readAttributes().permissions(), modes)) {
             throw new AccessDeniedException(path.toString());
         }
     }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        BoxNode entry = directories.readNode(path);
+        return entry.fileAttributeView();
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
         if (directories.exists(path)) {
-            return directories.getChild(path).attributes();
+            return directories.readNode(path).attributes();
         } else {
             throw new NoSuchFileException(path.toString());
         }
@@ -123,5 +125,42 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
     @Override
     public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
         throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    boolean isAllowed(Set<PosixFilePermission> permissions, AccessMode... modes) {
+        for (AccessMode mode : modes) {
+            if (!isModeAllowed(permissions, mode)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isModeAllowed(Set<PosixFilePermission> perms, AccessMode mode) {
+        switch (mode) {
+            case READ:
+                return perms.contains(PosixFilePermission.OWNER_READ)
+                        || perms.contains(PosixFilePermission.GROUP_READ)
+                        || perms.contains(PosixFilePermission.OTHERS_READ);
+
+            case WRITE:
+                return perms.contains(PosixFilePermission.OWNER_WRITE)
+                        || perms.contains(PosixFilePermission.GROUP_WRITE)
+                        || perms.contains(PosixFilePermission.OTHERS_WRITE);
+
+            case EXECUTE:
+                return perms.contains(PosixFilePermission.OWNER_EXECUTE)
+                        || perms.contains(PosixFilePermission.GROUP_EXECUTE)
+                        || perms.contains(PosixFilePermission.OTHERS_EXECUTE);
+
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public OutputStream newOutputStream(Path path, OpenOption... options) throws IOException {
+        checkAccess(path, AccessMode.WRITE);
+        return super.newOutputStream(path, options);
     }
 }

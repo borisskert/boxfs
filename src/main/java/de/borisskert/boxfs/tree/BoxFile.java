@@ -1,20 +1,28 @@
 package de.borisskert.boxfs.tree;
 
+import de.borisskert.boxfs.BoxFsFileAttributeView;
 import de.borisskert.boxfs.attributes.BoxFsFileAttributes;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
 
 class BoxFile implements BoxNode {
     private byte[] content = new byte[0];
 
-    private final BasicFileAttributes attributes;
+    private final BoxFsFileAttributes attributes;
+    private final BoxFsFileAttributeView view;
 
     BoxFile() {
         this.attributes = new BoxFsFileAttributes(() -> (long) content.length);
+        this.view = new BoxFsFileAttributeView(this.attributes);
     }
+
+    // -----------------------------------------------------------------------------------------------------
+    // BoxNode implementations
+    // -----------------------------------------------------------------------------------------------------
 
     @Override
     public void createDirectory(Path path) {
@@ -57,7 +65,7 @@ class BoxFile implements BoxNode {
     }
 
     @Override
-    public BoxNode getChild(Path path) {
+    public BoxNode readNode(Path path) {
         throw new UnsupportedOperationException("Cannot get a child of a file");
     }
 
@@ -84,5 +92,12 @@ class BoxFile implements BoxNode {
     @Override
     public byte[] content() throws IOException {
         return content;
+    }
+
+    @Override
+    public <V extends FileAttributeView> V fileAttributeView() {
+        @SuppressWarnings("unchecked")
+        V view = (V) this.view;
+        return view;
     }
 }

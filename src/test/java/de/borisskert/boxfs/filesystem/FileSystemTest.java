@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -94,7 +96,7 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
-                class WriteToFile {
+                class WriteShortContentToFile {
                     @BeforeEach
                     void setup() throws IOException {
                         Files.write(file, "Hello World!".getBytes());
@@ -105,6 +107,31 @@ abstract class FileSystemTest {
                         assertThat(Files.size(file)).isEqualTo(12);
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                         assertThat(Files.isSameFile(file, file)).isTrue();
+                    }
+                }
+
+                @Nested
+                class MakeFileReadOnly {
+                    @BeforeEach
+                    void setup() throws IOException {
+                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
+                        permissions.remove(PosixFilePermission.OWNER_WRITE);
+                        permissions.remove(PosixFilePermission.GROUP_WRITE);
+                        permissions.remove(PosixFilePermission.OTHERS_WRITE);
+                        Files.setPosixFilePermissions(file, permissions);
+                    }
+
+                    @Test
+                    void shouldMakeFileReadOnly() throws Exception {
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isFalse();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                    }
+
+                    @Test
+                    void shouldNotBeAbleToWriteContent() {
+                        assertThatThrownBy(() -> Files.write(file, "Hello World!".getBytes())).isInstanceOf(IOException.class);
                     }
                 }
             }

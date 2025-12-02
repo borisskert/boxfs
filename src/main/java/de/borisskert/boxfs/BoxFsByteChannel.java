@@ -26,7 +26,7 @@ class BoxFsByteChannel implements SeekableByteChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
 
-        BoxNode file = tree.getChild(path);
+        BoxNode file = tree.readNode(path);
         byte[] content = file.content();
         int size = (int) file.attributes().size();
 
@@ -47,7 +47,7 @@ class BoxFsByteChannel implements SeekableByteChannel {
     @Override
     public int write(ByteBuffer src) throws IOException {
         int bytes = src.remaining();  // entscheidend!
-        tree.getChild(path).writeContent(path, src);
+        tree.readNode(path).writeContent(path, src);
         return bytes;
     }
 
@@ -63,7 +63,7 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public long size() throws IOException {
-        return tree.getChild(path).attributes().size();
+        return tree.readNode(path).attributes().size();
     }
 
     @Override

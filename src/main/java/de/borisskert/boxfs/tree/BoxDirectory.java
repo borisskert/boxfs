@@ -1,11 +1,13 @@
 package de.borisskert.boxfs.tree;
 
+import de.borisskert.boxfs.BoxFsFileAttributeView;
 import de.borisskert.boxfs.attributes.BoxFsDirectoryAttributes;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,16 +16,17 @@ class BoxDirectory implements BoxNode {
     private final Map<String, BoxNode> children = new ConcurrentHashMap<>();
 
     private final String separator;
-    private final BasicFileAttributes attributes;
+    private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
+    private final BoxFsFileAttributeView attributeView = new BoxFsFileAttributeView(
+            new BoxFsDirectoryAttributes()
+    );
 
     BoxDirectory(String separator) {
         this.separator = separator;
-        this.attributes = new BoxFsDirectoryAttributes();
     }
 
     BoxDirectory(BoxDirectory parent) {
         this.separator = parent.separator;
-        this.attributes = new BoxFsDirectoryAttributes();
     }
 
     @Override
@@ -111,7 +114,7 @@ class BoxDirectory implements BoxNode {
 
     @Override
     public boolean isDirectory(Path path) {
-        return getChild(path).isDirectory();
+        return readNode(path).isDirectory();
     }
 
     @Override
@@ -121,11 +124,11 @@ class BoxDirectory implements BoxNode {
 
     @Override
     public boolean isFile(Path path) {
-        return getChild(path).isFile();
+        return readNode(path).isFile();
     }
 
     @Override
-    public BoxNode getChild(Path path) {
+    public BoxNode readNode(Path path) {
         if (path.getNameCount() < 1) {
             throw new IllegalArgumentException("Path must not be empty");
         }
@@ -138,7 +141,7 @@ class BoxDirectory implements BoxNode {
 
         return children.get(
                 firstName
-        ).getChild(
+        ).readNode(
                 path.subpath(1, path.getNameCount())
         );
     }
@@ -158,5 +161,12 @@ class BoxDirectory implements BoxNode {
     @Override
     public byte[] content() throws IOException {
         throw new UnsupportedOperationException("Cannot read content from a directory");
+    }
+
+    @Override
+    public <V extends FileAttributeView> V fileAttributeView() {
+        @SuppressWarnings("unchecked")
+        V view = (V) this.attributeView;
+        return view;
     }
 }
