@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.attributes;
+package de.borisskert.boxfs;
 
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
@@ -7,7 +7,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
 import java.util.Set;
 
-public class BoxFsDirectoryAttributes extends BoxFsAttributes {
+class BoxFsDirectoryAttributes extends BoxFsAttributes {
     public BoxFsDirectoryAttributes() {
         super(defaultDirectoryPermissions());
     }

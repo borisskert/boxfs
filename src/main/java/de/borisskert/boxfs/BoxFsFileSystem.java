@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BoxFsFileSystem extends FileSystem {
+class BoxFsFileSystem extends FileSystem {
     private static final String SEPARATOR = "/";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);

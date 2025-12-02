@@ -1,7 +1,4 @@
-package de.borisskert.boxfs.tree;
-
-import de.borisskert.boxfs.BoxFsFileAttributeView;
-import de.borisskert.boxfs.attributes.BoxFsDirectoryAttributes;
+package de.borisskert.boxfs;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,9 +8,9 @@ import java.nio.file.attribute.FileAttributeView;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class BoxDirectory implements BoxNode {
+class BoxFsDirectory implements BoxFsNode {
 
-    private final Map<String, BoxNode> children = new ConcurrentHashMap<>();
+    private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
 
     private final String separator;
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
@@ -21,11 +18,11 @@ class BoxDirectory implements BoxNode {
             new BoxFsDirectoryAttributes()
     );
 
-    BoxDirectory(String separator) {
+    BoxFsDirectory(String separator) {
         this.separator = separator;
     }
 
-    BoxDirectory(BoxDirectory parent) {
+    BoxFsDirectory(BoxFsDirectory parent) {
         this.separator = parent.separator;
     }
 
@@ -33,7 +30,7 @@ class BoxDirectory implements BoxNode {
     public void createDirectory(Path path) {
         children.putIfAbsent(
                 path.getName(0).toString(),
-                new BoxDirectory(this)
+                new BoxFsDirectory(this)
         );
 
         if (path.getNameCount() > 1) {
@@ -57,12 +54,12 @@ class BoxDirectory implements BoxNode {
         if (path.getNameCount() == 1) {
             children.putIfAbsent(
                     firstName,
-                    new BoxFile()
+                    new BoxFsFile()
             );
         } else {
             children.putIfAbsent(
                     firstName,
-                    new BoxDirectory(this)
+                    new BoxFsDirectory(this)
             );
 
             children.get(firstName)
@@ -128,7 +125,7 @@ class BoxDirectory implements BoxNode {
     }
 
     @Override
-    public BoxNode readNode(Path path) {
+    public BoxFsNode readNode(Path path) {
         if (path.getNameCount() < 1) {
             throw new IllegalArgumentException("Path must not be empty");
         }

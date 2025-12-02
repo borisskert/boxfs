@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.tree;
+package de.borisskert.boxfs;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -6,9 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
 
-public interface BoxNode {
-    static BoxNode newTree(String separator) {
-        return new BoxDirectory(separator);
+interface BoxFsNode {
+    static BoxFsNode newTree(String separator) {
+        return new BoxFsDirectory(separator);
     }
 
     void createDirectory(Path path);
@@ -27,7 +27,7 @@ public interface BoxNode {
 
     boolean isFile(Path path);
 
-    BoxNode readNode(Path path);
+    BoxFsNode readNode(Path path);
 
     void writeContent(Path path, ByteBuffer buffer);
 

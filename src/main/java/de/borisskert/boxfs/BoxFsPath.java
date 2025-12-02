@@ -8,7 +8,7 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.Iterator;
 
-public class BoxFsPath implements Path {
+class BoxFsPath implements Path {
     private final BoxFsFileSystem fileSystem;
     private final String separator;
     private final String path;

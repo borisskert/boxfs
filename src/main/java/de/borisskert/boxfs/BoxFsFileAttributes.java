@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.attributes;
+package de.borisskert.boxfs;
 
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public class BoxFsFileAttributes extends BoxFsAttributes {
+class BoxFsFileAttributes extends BoxFsAttributes {
     private final Supplier<Long> sizeSupplier;
 
     public BoxFsFileAttributes(Supplier<Long> sizeSupplier) {

@@ -1,7 +1,5 @@
 package de.borisskert.boxfs;
 
-import de.borisskert.boxfs.tree.BoxNode;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -16,10 +14,10 @@ import java.util.Map;
 import java.util.Set;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
-    private final BoxNode directories;
+    private final BoxFsNode directories;
 
     BoxFsFileSystemProvider(String separator) {
-        this.directories = BoxNode.newTree(separator);
+        this.directories = BoxFsNode.newTree(separator);
     }
 
     @Override
@@ -94,8 +92,8 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        BoxNode boxNode = directories.readNode(path);
-        BoxFsFileAttributeView view = boxNode.fileAttributeView();
+        BoxFsNode boxFsNode = directories.readNode(path);
+        BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
 
         if (!isAllowed(view.readAttributes().permissions(), modes)) {
             throw new AccessDeniedException(path.toString());
@@ -104,7 +102,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        BoxNode entry = directories.readNode(path);
+        BoxFsNode entry = directories.readNode(path);
         return entry.fileAttributeView();
     }
 

@@ -1,7 +1,5 @@
 package de.borisskert.boxfs;
 
-import de.borisskert.boxfs.tree.BoxNode;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -15,9 +13,9 @@ class BoxFsByteChannel implements SeekableByteChannel {
     private final AtomicInteger position = new AtomicInteger(0);
 
     private final Path path;
-    private final BoxNode tree;
+    private final BoxFsNode tree;
 
-    public BoxFsByteChannel(Path path, BoxNode tree) {
+    public BoxFsByteChannel(Path path, BoxFsNode tree) {
         this.path = path;
         this.tree = tree;
     }
@@ -26,7 +24,7 @@ class BoxFsByteChannel implements SeekableByteChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
 
-        BoxNode file = tree.readNode(path);
+        BoxFsNode file = tree.readNode(path);
         byte[] content = file.content();
         int size = (int) file.attributes().size();
 

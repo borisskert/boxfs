@@ -1,11 +1,11 @@
-package de.borisskert.boxfs.attributes;
+package de.borisskert.boxfs;
 
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class BoxFsAttributes implements PosixFileAttributes {
+abstract class BoxFsAttributes implements PosixFileAttributes {
     private final AtomicReference<Set<PosixFilePermission>> permissions;
 
     protected BoxFsAttributes(Set<PosixFilePermission> permissions) {

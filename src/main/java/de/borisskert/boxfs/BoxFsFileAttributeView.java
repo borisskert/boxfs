@@ -1,12 +1,10 @@
 package de.borisskert.boxfs;
 
-import de.borisskert.boxfs.attributes.BoxFsAttributes;
-
 import java.io.IOException;
 import java.nio.file.attribute.*;
 import java.util.Set;
 
-public class BoxFsFileAttributeView implements PosixFileAttributeView {
+class BoxFsFileAttributeView implements PosixFileAttributeView {
     private final BoxFsAttributes attributes;
 
     public BoxFsFileAttributeView(BoxFsAttributes attributes) {
