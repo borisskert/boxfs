@@ -1,0 +1,197 @@
+package de.borisskert.boxfs.macos;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+class BoxFsDirectory implements BoxFsNode {
+
+    private final BoxFsFileSystem fileSystem;
+    private final BoxFsDirectory parent;
+    private final String name;
+    private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
+
+    private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
+    private final BoxFsFileAttributeView attributeView = new BoxFsFileAttributeView(
+            new BoxFsDirectoryAttributes()
+    );
+
+    BoxFsDirectory(BoxFsFileSystem fileSystem, BoxFsDirectory parent, String name) {
+        this.fileSystem = fileSystem;
+        this.parent = parent;
+        this.name = name;
+    }
+
+    @Override
+    public void createDirectory(Path path) {
+        String name = path.getName(0).toString();
+
+        children.putIfAbsent(
+                name,
+                new BoxFsDirectory(fileSystem, this, name)
+        );
+
+        if (path.getNameCount() > 1) {
+            children.get(
+                            name
+                    )
+                    .createDirectory(
+                            path.subpath(1, path.getNameCount())
+                    );
+        }
+    }
+
+    @Override
+    public void createFile(Path path) {
+        if (path.getNameCount() < 1) {
+            return;
+        }
+
+        String name = path.getName(0).toString();
+
+        if (path.getNameCount() == 1) {
+            children.putIfAbsent(
+                    name,
+                    new BoxFsFile(fileSystem, this, name)
+            );
+        } else {
+            children.putIfAbsent(
+                    name,
+                    new BoxFsDirectory(fileSystem, this, name)
+            );
+
+            children.get(name)
+                    .createFile(
+                            path.subpath(1, path.getNameCount())
+                    );
+        }
+    }
+
+    @Override
+    public void delete(Path path) {
+        if (path.getNameCount() < 1) {
+            return;
+        }
+
+        if (path.getNameCount() == 1) {
+            children.remove(path.getName(0).toString());
+            return;
+        }
+
+        children.get(
+                path.getName(0).toString()
+        ).delete(
+                path.subpath(1, path.getNameCount())
+        );
+    }
+
+    @Override
+    public boolean exists(Path path) {
+        if (path.getNameCount() < 1) {
+            return false;
+        }
+
+        String name = path.getName(0).toString();
+
+        if (path.getNameCount() == 1) {
+            return children.containsKey(name);
+        }
+
+        return children.containsKey(name)
+                && children.get(name)
+                .exists(path.subpath(1, path.getNameCount()));
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return true;
+    }
+
+    @Override
+    public boolean isDirectory(Path path) {
+        return readNode(path).isDirectory();
+    }
+
+    @Override
+    public boolean isFile() {
+        return false;
+    }
+
+    @Override
+    public boolean isFile(Path path) {
+        return readNode(path).isFile();
+    }
+
+    @Override
+    public BoxFsNode readNode(Path path) {
+        if (path.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be empty");
+        }
+
+        String name = path.getName(0).toString();
+
+        if (path.getNameCount() == 1) {
+            return children.get(name);
+        }
+
+        return children.get(
+                name
+        ).readNode(
+                path.subpath(1, path.getNameCount())
+        );
+    }
+
+    @Override
+    public void writeContent(Path path, ByteBuffer buffer) {
+        throw new UnsupportedOperationException("Cannot write content to a directory");
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A attributes() {
+        @SuppressWarnings("unchecked")
+        A attrs = (A) attributes;
+        return attrs;
+    }
+
+    @Override
+    public byte[] content() throws IOException {
+        throw new UnsupportedOperationException("Cannot read content from a directory");
+    }
+
+    @Override
+    public <V extends FileAttributeView> V fileAttributeView() {
+        @SuppressWarnings("unchecked")
+        V view = (V) this.attributeView;
+        return view;
+    }
+
+    @Override
+    public Collection<String> children() {
+        return children.keySet();
+    }
+
+    @Override
+    public Optional<BoxFsNode> parent() {
+        return Optional.ofNullable(parent);
+    }
+
+    @Override
+    public BoxFsPath path() {
+        if (parent == null) {
+            return fileSystem.root();
+        }
+
+        return parent.path().resolve(name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}

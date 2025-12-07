@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.macos;
 
 import java.io.IOException;
 import java.io.OutputStream;

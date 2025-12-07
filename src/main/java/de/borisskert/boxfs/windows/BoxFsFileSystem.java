@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class BoxFsFileSystem extends FileSystem {
+public class BoxFsFileSystem extends FileSystem {
     private static final String SEPARATOR = "/";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
@@ -87,5 +87,9 @@ class BoxFsFileSystem extends FileSystem {
 
     String separator() {
         return SEPARATOR;
+    }
+
+    public static FileSystem windows() {
+        return new BoxFsFileSystem();
     }
 }

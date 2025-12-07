@@ -7,10 +7,10 @@ public class BoxFs {
     }
 
     public static FileSystem windows() {
-        return new BoxFsFileSystem();
+        return de.borisskert.boxfs.windows.BoxFsFileSystem.windows();
     }
 
     public static FileSystem macos() {
-        return new BoxFsFileSystem();
+        return de.borisskert.boxfs.macos.BoxFsFileSystem.macos();
     }
 }

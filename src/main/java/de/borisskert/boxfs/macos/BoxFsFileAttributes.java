@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.macos;
 
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;

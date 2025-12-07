@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.windows;
 
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;

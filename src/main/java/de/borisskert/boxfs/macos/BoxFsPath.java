@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.macos;
 
 import com.sun.istack.internal.NotNull;
 

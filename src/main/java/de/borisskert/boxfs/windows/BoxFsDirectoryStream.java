@@ -1,4 +1,4 @@
-package de.borisskert.boxfs;
+package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
