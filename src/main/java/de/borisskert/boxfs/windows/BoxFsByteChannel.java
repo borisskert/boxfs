@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,7 +25,9 @@ class BoxFsByteChannel implements SeekableByteChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
 
-        BoxFsNode file = tree.readNode(path);
+        BoxFsNode file = tree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Node not found"));
+
         byte[] content = file.content();
         int size = (int) file.attributes().size();
 
@@ -44,8 +47,10 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        int bytes = src.remaining();  // entscheidend!
-        tree.readNode(path).writeContent(path, src);
+        int bytes = src.remaining();
+        BoxFsNode fileNode = tree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Node not found"));
+        fileNode.writeContent(path, src);
         return bytes;
     }
 
@@ -61,7 +66,9 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public long size() throws IOException {
-        return tree.readNode(path).attributes().size();
+        BoxFsNode fileNode = tree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Node not found"));
+        return fileNode.attributes().size();
     }
 
     @Override

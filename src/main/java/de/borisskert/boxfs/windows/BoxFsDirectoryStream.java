@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 
 class BoxFsDirectoryStream implements DirectoryStream<Path> {
@@ -19,7 +20,8 @@ class BoxFsDirectoryStream implements DirectoryStream<Path> {
     @Override
     public Iterator<Path> iterator() {
         Collection<String> children = fileTree.readNode(directoryPath)
-                .children();
+                .map(BoxFsNode::children)
+                .orElse(Collections.emptyList());
 
         return children.stream()
                 .map(directoryPath::resolve)

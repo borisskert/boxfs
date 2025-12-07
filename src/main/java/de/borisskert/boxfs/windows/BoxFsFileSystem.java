@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BoxFsFileSystem extends FileSystem {
-    private static final String SEPARATOR = "/";
+    private static final String SEPARATOR = "\\";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
     private final BoxFsNode fileTree = BoxFsNode.newTree(this);
@@ -44,7 +44,8 @@ public class BoxFsFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singleton(rootPath);
+//        return Collections.singleton(rootPath);
+        return fileTree.rootDirectories();
     }
 
     @Override

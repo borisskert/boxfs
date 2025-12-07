@@ -12,12 +12,12 @@ class BoxFsFile implements BoxFsNode {
     private byte[] content = new byte[0];
 
     private final String name;
-    private final BoxFsDirectory parent;
+    private final BoxFsNode parent;
     private final BoxFsFileSystem fileSystem;
     private final BoxFsFileAttributes attributes;
     private final BoxFsFileAttributeView view;
 
-    BoxFsFile(BoxFsFileSystem fileSystem, BoxFsDirectory parent, String name) {
+    BoxFsFile(BoxFsFileSystem fileSystem, BoxFsNode parent, String name) {
         this.name = name;
         this.parent = parent;
         this.fileSystem = fileSystem;
@@ -70,7 +70,7 @@ class BoxFsFile implements BoxFsNode {
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
+    public Optional<BoxFsNode> readNode(Path path) {
         throw new UnsupportedOperationException("Cannot get a child of a file");
     }
 
@@ -122,5 +122,10 @@ class BoxFsFile implements BoxFsNode {
                 parent.path().getFileSystem(),
                 parent.path().toString() + "/" + name
         );
+    }
+
+    @Override
+    public Iterable<Path> rootDirectories() {
+        throw new UnsupportedOperationException("Cannot get root directories of a file");
     }
 }

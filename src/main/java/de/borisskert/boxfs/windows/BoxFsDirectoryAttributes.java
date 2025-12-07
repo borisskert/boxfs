@@ -1,15 +1,11 @@
 package de.borisskert.boxfs.windows;
 
+import java.nio.file.AccessMode;
 import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.HashSet;
-import java.util.Set;
 
 class BoxFsDirectoryAttributes extends BoxFsAttributes {
     public BoxFsDirectoryAttributes() {
-        super(defaultDirectoryPermissions());
+        super(BoxFsBasicAttributesMap.empty().put("dos:readonly", Boolean.FALSE));
     }
 
     @Override
@@ -55,31 +51,5 @@ class BoxFsDirectoryAttributes extends BoxFsAttributes {
     @Override
     public Object fileKey() {
         throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public UserPrincipal owner() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public GroupPrincipal group() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    private static Set<PosixFilePermission> defaultDirectoryPermissions() {
-        Set<PosixFilePermission> permissions = new HashSet<>();
-
-        permissions.add(PosixFilePermission.OWNER_READ);
-        permissions.add(PosixFilePermission.OWNER_WRITE);
-        permissions.add(PosixFilePermission.OWNER_EXECUTE);
-
-        permissions.add(PosixFilePermission.GROUP_READ);
-        permissions.add(PosixFilePermission.GROUP_EXECUTE);
-
-        permissions.add(PosixFilePermission.OTHERS_READ);
-        permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-
-        return permissions;
     }
 }

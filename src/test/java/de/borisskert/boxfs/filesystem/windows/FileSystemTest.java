@@ -244,7 +244,7 @@ abstract class FileSystemTest {
 
             @Test
             void shouldFailWhenTryingToEstimateSize() {
-                assertThatThrownBy(() -> Files.size(dir)).isInstanceOf(IOException.class);
+                assertThatThrownBy(() -> Files.size(dir)).isInstanceOf(NoSuchFileException.class);
             }
 
             @Nested
@@ -271,6 +271,7 @@ abstract class FileSystemTest {
                     assertThat(Files.isReadable(dir)).isTrue();
                     assertThat(Files.isWritable(dir)).isTrue();
                     assertThat(Files.isExecutable(dir)).isTrue();
+                    assertThat(Files.getAttribute(dir, "dos:readonly")).isEqualTo(false);
                 }
 
                 @Test

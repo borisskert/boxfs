@@ -12,7 +12,7 @@ class BoxFsFileAttributes extends BoxFsAttributes {
     private final Supplier<Long> sizeSupplier;
 
     public BoxFsFileAttributes(Supplier<Long> sizeSupplier) {
-        super(defaultFilePermissions());
+        super(BoxFsBasicAttributesMap.empty());
         this.sizeSupplier = sizeSupplier;
     }
 
@@ -59,28 +59,5 @@ class BoxFsFileAttributes extends BoxFsAttributes {
     @Override
     public Object fileKey() {
         throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public UserPrincipal owner() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public GroupPrincipal group() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    private static Set<PosixFilePermission> defaultFilePermissions() {
-        Set<PosixFilePermission> permissions = new HashSet<>();
-
-        permissions.add(PosixFilePermission.OWNER_READ);
-        permissions.add(PosixFilePermission.OWNER_WRITE);
-        permissions.add(PosixFilePermission.GROUP_READ);
-        permissions.add(PosixFilePermission.GROUP_WRITE);
-        permissions.add(PosixFilePermission.OTHERS_READ);
-        permissions.add(PosixFilePermission.OTHERS_WRITE);
-
-        return permissions;
     }
 }

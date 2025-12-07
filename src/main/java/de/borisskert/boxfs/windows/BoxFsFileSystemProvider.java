@@ -1,16 +1,15 @@
 package de.borisskert.boxfs.windows;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
@@ -55,12 +54,13 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        checkAccess(dir.getParent(), AccessMode.WRITE);
+        checkAccess(dir.getParent(), AccessMode.WRITE); // TODO check
         fileTree.createDirectory(dir);
     }
 
     @Override
     public void delete(Path path) throws IOException {
+        checkAccess(path, AccessMode.WRITE);
         fileTree.delete(path);
     }
 
@@ -81,6 +81,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public boolean isHidden(Path path) throws IOException {
+        if (Files.notExists(path)) {
+            throw new FileNotFoundException(path.toString());
+        }
+
         return false;
     }
 
@@ -95,37 +99,61 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        BoxFsNode boxFsNode = fileTree.readNode(path);
-        BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
-
-        if (!isAllowed(view.readAttributes().permissions(), modes)) {
-            throw new AccessDeniedException(path.toString());
+        Optional<BoxFsNode> boxFsNode = fileTree.readNode(path);
+        if (!boxFsNode.isPresent()) {
+            throw new UnsupportedOperationException("Not yet implemented");
         }
+
+        BoxFsFileAttributeView view = boxFsNode.get().fileAttributeView();
+        BoxFsAttributes attributes = (BoxFsAttributes) view.readAttributes();
+
+        attributes.checkAccess(modes);
     }
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        BoxFsNode entry = fileTree.readNode(path);
-        return entry.fileAttributeView();
+        if (PosixFileAttributeView.class.equals(type)) {
+            throw new UnsupportedOperationException("PosixFileAttributeView not supported");
+        }
+
+        return fileTree.readNode(path)
+                .map(BoxFsNode::fileAttributeView)
+                .map(v -> (V) v)
+                .orElseThrow(() -> new UnsupportedOperationException("Not yet implemented"));
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-        if (fileTree.exists(path)) {
-            return fileTree.readNode(path).attributes();
-        } else {
-            throw new NoSuchFileException(path.toString());
+        if (PosixFileAttributes.class.equals(type)) {
+            throw new UnsupportedOperationException("PosixFileAttributes not supported");
         }
+
+        return fileTree.readNode(path)
+                .map(BoxFsNode::attributes)
+                .map(a -> (A) a)
+                .orElseThrow(() -> new NoSuchFileException(path.toString()));
     }
 
     @Override
     public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
-        throw new NoSuchFileException(path.toString());
+        BoxFsBasicAttributesMap attributesAsMap = fileTree.readNode(path)
+                .map(BoxFsNode::attributes)
+                .map(a -> (BoxFsAttributes) a)
+                .map(BoxFsAttributes::toMap)
+                .orElseThrow(() -> new NoSuchFileException(path.toString()));
+
+        return attributesAsMap.readAttributes(attributes);
     }
 
     @Override
     public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        BoxFsBasicAttributesMap attributesAsMap = fileTree.readNode(path)
+                .map(BoxFsNode::attributes)
+                .map(a -> (BoxFsAttributes) a)
+                .map(BoxFsAttributes::toMap)
+                .orElseThrow(() -> new NoSuchFileException(path.toString()));
+
+        attributesAsMap.put(attribute, value);
     }
 
     boolean isAllowed(Set<PosixFilePermission> permissions, AccessMode... modes) {

@@ -6,119 +6,201 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 class BoxFsTree implements BoxFsNode {
+    private static final Pattern DRIVE_LETTER_PATTERN = Pattern.compile("^(?<driveletter>[A-Za-z]):\\\\.*$");
 
     private final BoxFsFileSystem fileSystem;
-    private final BoxFsDirectory rootDirectory;
+    private final Map<Character, BoxFsDrive> drives = new ConcurrentHashMap<>();
 
     BoxFsTree(BoxFsFileSystem fileSystem) {
         this.fileSystem = fileSystem;
-        this.rootDirectory = new BoxFsDirectory(fileSystem, null, "/");
+        this.drives.put('C', new BoxFsDrive(fileSystem, 'C'));
     }
 
     @Override
     public void createDirectory(Path path) {
-        rootDirectory.createDirectory(path);
+        if (!path.isAbsolute()) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        Optional<BoxFsNode> foundDrive = findDrive(path);
+
+        if (path.getNameCount() < 1) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        foundDrive.ifPresent(
+                drive -> drive.createDirectory(
+                        path.subpath(0, path.getNameCount())
+                )
+        );
     }
 
     @Override
     public void createFile(Path path) {
-        rootDirectory.createFile(path);
+        if (!path.isAbsolute()) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        Optional<BoxFsNode> foundDrive = findDrive(path);
+
+        if (path.getNameCount() < 1) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        foundDrive.ifPresent(
+                drive -> drive.createFile(
+                        path.subpath(0, path.getNameCount())
+                )
+        );
     }
 
     @Override
     public void delete(Path path) {
-        rootDirectory.delete(path);
+        if (!path.isAbsolute()) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        Optional<BoxFsNode> foundDrive = findDrive(path);
+
+        if (path.getNameCount() < 1) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        foundDrive.ifPresent(
+                drive -> drive.delete(
+                        path.subpath(0, path.getNameCount())
+                )
+        );
     }
 
     @Override
     public boolean exists(Path path) {
-        if (isRoot(path)) {
-            return true;
+        if (!path.isAbsolute()) {
+            return false;
         }
 
-        return rootDirectory.exists(path);
+        String absolutePath = path.toString();
+
+        char driveLetter = parseDriveLetter(absolutePath);
+
+        if (path.getNameCount() < 1) {
+            return drives.containsKey(driveLetter);
+        }
+
+        if (!drives.containsKey(driveLetter)) {
+            return false;
+        }
+
+        return drives.get(driveLetter).exists(path.subpath(0, path.getNameCount()));
     }
 
     @Override
     public boolean isDirectory() {
-        return rootDirectory.isDirectory();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isDirectory(Path path) {
-        if (isRoot(path)) {
-            return true;
-        }
-
-        return rootDirectory.isDirectory(path);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isFile() {
-        return rootDirectory.isFile();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isFile(Path path) {
-        if (isRoot(path)) {
-            return false;
-        }
-
-        return rootDirectory.isFile(path);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
-        if (isRoot(path)) {
-            return rootDirectory;
+    public Optional<BoxFsNode> readNode(Path path) {
+        if (!path.isAbsolute()) {
+            throw new UnsupportedOperationException("Not yet implemented");
         }
 
-        return rootDirectory.readNode(path);
+        Optional<BoxFsNode> foundDrive = findDrive(path);
+
+        if (path.getNameCount() < 1) {
+            return foundDrive;
+        }
+
+        return foundDrive
+                .flatMap(drive -> drive.readNode(path.subpath(0, path.getNameCount())));
     }
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        if (isRoot(path)) {
-            throw new IllegalArgumentException("Path must not be empty");
-        }
-
-        rootDirectory.writeContent(path, buffer);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public <A extends BasicFileAttributes> A attributes() {
-        return rootDirectory.attributes();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public byte[] content() throws IOException {
-        return rootDirectory.content();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public <V extends FileAttributeView> V fileAttributeView() {
-        return rootDirectory.fileAttributeView();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public Collection<String> children() {
-        return rootDirectory.children();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public Optional<BoxFsNode> parent() {
-        return Optional.empty();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public BoxFsPath path() {
-        return fileSystem.root();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    private static boolean isRoot(Path path) {
-        return path.isAbsolute() && path.getNameCount() < 1;
+    @Override
+    public Iterable<Path> rootDirectories() {
+        return drives.values()
+                .stream()
+                .map(BoxFsDrive::path)
+                .collect(Collectors.toList());
+    }
+
+    private Optional<BoxFsNode> findDrive(Path path) {
+        String absolutePath = path.toString();
+
+        char driveLetter = parseDriveLetter(absolutePath);
+
+        return Optional.ofNullable(drives.get(driveLetter));
+    }
+
+    private static char parseDriveLetter(String absolutePath) {
+        Matcher matcher = DRIVE_LETTER_PATTERN.matcher(absolutePath.toString());
+
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid path: " + absolutePath);
+        }
+
+        String driveLetter = matcher.group("driveletter");
+        if (driveLetter == null || driveLetter.length() != 1) {
+            throw new IllegalArgumentException("Invalid path: " + absolutePath);
+        }
+
+        return driveLetter.charAt(0);
     }
 }

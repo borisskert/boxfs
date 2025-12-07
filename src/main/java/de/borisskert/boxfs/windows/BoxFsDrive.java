@@ -10,37 +10,42 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-class BoxFsDirectory implements BoxFsNode {
-
+class BoxFsDrive implements BoxFsNode {
+    private final char driveLetter;
     private final BoxFsFileSystem fileSystem;
-    private final BoxFsNode parent;
-    private final String name;
-    private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
 
+    private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
     private final BoxFsFileAttributeView attributeView = new BoxFsFileAttributeView(
             new BoxFsDirectoryAttributes()
     );
 
-    BoxFsDirectory(BoxFsFileSystem fileSystem, BoxFsNode parent, String name) {
+    BoxFsDrive(BoxFsFileSystem fileSystem, char driveLetter) {
         this.fileSystem = fileSystem;
-        this.parent = parent;
-        this.name = name;
+        this.driveLetter = driveLetter;
     }
+
 
     @Override
     public void createDirectory(Path path) {
+        if (path.getNameCount() < 1) {
+            return;
+        }
+
         String name = path.getName(0).toString();
 
-        children.putIfAbsent(
-                name,
-                new BoxFsDirectory(fileSystem, this, name)
-        );
+        if (path.getNameCount() == 1) {
+            children.putIfAbsent(
+                    name,
+                    new BoxFsDirectory(fileSystem, this, name)
+            );
+        } else {
+            children.putIfAbsent(
+                    name,
+                    new BoxFsDirectory(fileSystem, this, name)
+            );
 
-        if (path.getNameCount() > 1) {
-            children.get(
-                            name
-                    )
+            children.get(name)
                     .createDirectory(
                             path.subpath(1, path.getNameCount())
                     );
@@ -55,17 +60,12 @@ class BoxFsDirectory implements BoxFsNode {
 
         String name = path.getName(0).toString();
 
-        if (path.getNameCount() == 1) {
-            children.putIfAbsent(
-                    name,
-                    new BoxFsFile(fileSystem, this, name)
-            );
-        } else {
-            children.putIfAbsent(
-                    name,
-                    new BoxFsDirectory(fileSystem, this, name)
-            );
+        children.putIfAbsent(
+                name,
+                new BoxFsFile(fileSystem, this, name)
+        );
 
+        if (path.getNameCount() > 1) {
             children.get(name)
                     .createFile(
                             path.subpath(1, path.getNameCount())
@@ -110,22 +110,22 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public boolean isDirectory() {
-        return true;
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isDirectory(Path path) {
-        return readNode(path).map(BoxFsNode::isDirectory).orElse(false);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isFile() {
-        return false;
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isFile(Path path) {
-        return readNode(path).map(BoxFsNode::isFile).orElse(false);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -140,28 +140,28 @@ class BoxFsDirectory implements BoxFsNode {
             return Optional.ofNullable(children.get(name));
         }
 
-        return Optional.ofNullable(
-                children.get(name)
-        ).flatMap(
+        return Optional.ofNullable(children.get(
+                name
+        )).flatMap(
                 n -> n.readNode(path.subpath(1, path.getNameCount()))
         );
     }
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Cannot write content to a directory");
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public <A extends BasicFileAttributes> A attributes() {
         @SuppressWarnings("unchecked")
-        A attrs = (A) attributes;
-        return attrs;
+        A attributes = (A) this.attributes;
+        return attributes;
     }
 
     @Override
     public byte[] content() throws IOException {
-        throw new UnsupportedOperationException("Cannot read content from a directory");
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -173,30 +173,22 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public Collection<String> children() {
-        return children.keySet();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public Optional<BoxFsNode> parent() {
-        return Optional.ofNullable(parent);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public BoxFsPath path() {
-        if (parent == null) {
-            return fileSystem.root();
-        }
-
-        return parent.path().resolve(name);
+        String path = driveLetter + ":\\";
+        return new BoxFsPath(fileSystem, path);
     }
 
     @Override
     public Iterable<Path> rootDirectories() {
-        throw new UnsupportedOperationException("Not supported to get root directories from directory");
-    }
-
-    @Override
-    public String toString() {
-        return name;
+        throw new UnsupportedOperationException("Not supported to get root directories from drive");
     }
 }

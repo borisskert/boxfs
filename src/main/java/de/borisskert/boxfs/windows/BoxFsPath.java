@@ -26,7 +26,7 @@ class BoxFsPath implements Path {
 
     @Override
     public boolean isAbsolute() {
-        return path.startsWith(fileSystem.separator());
+        return path.matches("^[A-Za-z]:\\\\.*");
     }
 
     @Override
@@ -62,7 +62,10 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath subpath(int beginIndex, int endIndex) {
-        return new BoxFsPath(fileSystem, Paths.get(path).subpath(beginIndex, endIndex).toString());
+        Path path = Paths.get(this.path);
+        Path subpath = path.subpath(beginIndex, endIndex);
+
+        return new BoxFsPath(fileSystem, subpath.toString());
     }
 
     @Override
