@@ -6,7 +6,11 @@ public class BoxFs {
     private BoxFs() {
     }
 
-    public static FileSystem create() {
+    public static FileSystem windows() {
+        return new BoxFsFileSystem();
+    }
+
+    public static FileSystem macos() {
         return new BoxFsFileSystem();
     }
 }

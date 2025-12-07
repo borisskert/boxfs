@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.wrapped;
+package de.borisskert.boxfs.wrapped.macos;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -22,7 +22,7 @@ public class WrappedFileSystem extends FileSystem {
             throw new IOException("Root directory already exists: " + root);
         }
 
-        Files.createDirectory(this.root);
+        Files.createDirectories(this.root);
     }
 
     @Override

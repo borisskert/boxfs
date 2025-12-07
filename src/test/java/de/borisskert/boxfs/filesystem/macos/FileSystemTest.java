@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.filesystem;
+package de.borisskert.boxfs.filesystem.macos;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

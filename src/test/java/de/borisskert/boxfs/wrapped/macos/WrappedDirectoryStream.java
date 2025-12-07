@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.wrapped;
+package de.borisskert.boxfs.wrapped.macos;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

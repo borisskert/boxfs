@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.path;
+package de.borisskert.boxfs.path.windows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,12 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 abstract class PathTest {
     abstract FileSystem getFs() throws IOException;
 
-    private FileSystem defaultFs;
     private FileSystem fs;
 
     @BeforeEach
     void setup() throws IOException {
-        defaultFs = FileSystems.getDefault();
         fs = getFs();
     }
 
@@ -29,16 +26,16 @@ abstract class PathTest {
 
         @BeforeEach
         void setup() {
-            path = fs.getPath("/tmp/test");
+            path = fs.getPath("C:\\tmp\\test");
         }
 
         @Test
         void shouldCreateSimplePath() {
             assertThat(path).isNotNull();
-            assertThat(path.toString()).isEqualTo("/tmp/test");
+            assertThat(path.toString()).isEqualTo("C:\\tmp\\test");
             assertThat(path.getFileName().toString()).isEqualTo("test");
-            assertThat(path.getParent().toString()).isEqualTo("/tmp");
-            assertThat(path.getRoot().toString()).isEqualTo("/");
+            assertThat(path.getParent().toString()).isEqualTo("C:\\tmp");
+            assertThat(path.getRoot().toString()).isEqualTo("C:\\");
             assertThat(path.getNameCount()).isEqualTo(2);
             assertThat(path.isAbsolute()).isTrue();
 
@@ -49,7 +46,6 @@ abstract class PathTest {
             Path name1 = path.getName(1);
             assertThat(name1).isNotNull();
             assertThat(name1.toString()).isEqualTo("test");
-
         }
 
         @Nested
@@ -64,7 +60,7 @@ abstract class PathTest {
             @Test
             void shouldCreateAbsolutePath() {
                 assertThat(absolutePath).isNotNull();
-                assertThat(absolutePath.toString()).isEqualTo("/tmp/test");
+                assertThat(absolutePath.toString()).isEqualTo("C:\\tmp\\test");
             }
         }
 
@@ -80,7 +76,7 @@ abstract class PathTest {
             @Test
             void shouldCreateSubPath() {
                 assertThat(subPath).isNotNull();
-                assertThat(subPath.toString()).isEqualTo("tmp/test");
+                assertThat(subPath.toString()).isEqualTo("tmp\\test");
             }
         }
 
@@ -96,7 +92,7 @@ abstract class PathTest {
             @Test
             void shouldCreateNormalizedPath() {
                 assertThat(normalizedPath).isNotNull();
-                assertThat(normalizedPath.toString()).isEqualTo("/tmp/test");
+                assertThat(normalizedPath.toString()).isEqualTo("C:\\tmp\\test");
             }
         }
     }
@@ -107,14 +103,14 @@ abstract class PathTest {
 
         @BeforeEach
         void setup() {
-            path = fs.getPath("/tmp/a/b/c/d/test");
+            path = fs.getPath("C:\\tmp\\a\\b\\c\\d\\test");
         }
 
         @Test
         void shouldCreateNestedPath() {
             assertThat(path).isNotNull();
-            assertThat(path.toString()).isEqualTo("/tmp/a/b/c/d/test");
-            assertThat(path.toAbsolutePath().toString()).isEqualTo("/tmp/a/b/c/d/test");
+            assertThat(path.toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d\\test");
+            assertThat(path.toAbsolutePath().toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d\\test");
         }
 
         @Nested
@@ -129,8 +125,8 @@ abstract class PathTest {
             @Test
             void shouldCreateParentPath() {
                 assertThat(parentPath).isNotNull();
-                assertThat(parentPath.toString()).isEqualTo("/tmp/a/b/c/d");
-                assertThat(parentPath.toAbsolutePath().toString()).isEqualTo("/tmp/a/b/c/d");
+                assertThat(parentPath.toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d");
+                assertThat(parentPath.toAbsolutePath().toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d");
             }
 
             @Nested
@@ -140,7 +136,7 @@ abstract class PathTest {
                 @BeforeEach
                 void setup() {
                     relativizedPath = parentPath.relativize(path);
-                    assertThat(parentPath.toAbsolutePath().toString()).isEqualTo("/tmp/a/b/c/d");
+                    assertThat(parentPath.toAbsolutePath().toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d");
                 }
 
                 @Test
@@ -154,8 +150,8 @@ abstract class PathTest {
                     assertThat(relativizedPath.getParent()).isNull();
 
                     String absolute = relativizedPath.toAbsolutePath().toString();
-                    assertThat(absolute).startsWith("/");
-                    assertThat(absolute).endsWith("/test");
+                    assertThat(absolute).startsWith("C:\\");
+                    assertThat(absolute).endsWith("\\test");
                 }
             }
         }
