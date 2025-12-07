@@ -5,14 +5,22 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
+import java.util.Collection;
+import java.util.Optional;
 
 class BoxFsFile implements BoxFsNode {
     private byte[] content = new byte[0];
 
+    private final String name;
+    private final BoxFsDirectory parent;
+    private final BoxFsFileSystem fileSystem;
     private final BoxFsFileAttributes attributes;
     private final BoxFsFileAttributeView view;
 
-    BoxFsFile() {
+    BoxFsFile(BoxFsFileSystem fileSystem, BoxFsDirectory parent, String name) {
+        this.name = name;
+        this.parent = parent;
+        this.fileSystem = fileSystem;
         this.attributes = new BoxFsFileAttributes(() -> (long) content.length);
         this.view = new BoxFsFileAttributeView(this.attributes);
     }
@@ -96,5 +104,23 @@ class BoxFsFile implements BoxFsNode {
         @SuppressWarnings("unchecked")
         V view = (V) this.view;
         return view;
+    }
+
+    @Override
+    public Collection<String> children() {
+        throw new UnsupportedOperationException("Cannot get children of a file");
+    }
+
+    @Override
+    public Optional<BoxFsNode> parent() {
+        return Optional.of(parent);
+    }
+
+    @Override
+    public BoxFsPath path() {
+        return new BoxFsPath(
+                parent.path().getFileSystem(),
+                parent.path().toString() + "/" + name
+        );
     }
 }

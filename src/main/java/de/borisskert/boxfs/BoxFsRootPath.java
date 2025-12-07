@@ -1,68 +1,55 @@
 package de.borisskert.boxfs;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.Iterator;
-import java.util.Objects;
-import java.util.Optional;
 
-class BoxFsPath implements Path {
-    private final BoxFsFileSystem fileSystem;
-    private final String path;
+class BoxFsRootPath extends BoxFsPath {
 
-    BoxFsPath(BoxFsFileSystem fileSystem, String path) {
-        this.fileSystem = fileSystem;
-        this.path = path;
+    BoxFsRootPath(BoxFsFileSystem fileSystem) {
+        super(fileSystem, fileSystem.separator());
     }
 
     @Override
     public BoxFsFileSystem getFileSystem() {
-        return fileSystem;
+        return super.getFileSystem();
     }
 
     @Override
     public boolean isAbsolute() {
-        return path.startsWith(fileSystem.separator());
+        return super.isAbsolute();
     }
 
     @Override
     public BoxFsPath getRoot() {
-        Path root = Paths.get(path).getRoot();
-
-        return Optional.ofNullable(root)
-                .map(r -> new BoxFsPath(fileSystem, r.toString()))
-                .orElse(null);
+        return this;
     }
 
     @Override
     public BoxFsPath getFileName() {
-        return new BoxFsPath(fileSystem, Paths.get(path).getFileName().toString());
+        return super.getFileName();
     }
 
     @Override
     public BoxFsPath getParent() {
-        return Optional.ofNullable(Paths.get(path).getParent())
-                .map(p -> new BoxFsPath(fileSystem, p.toString()))
-                .orElse(null);
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public int getNameCount() {
-        return Paths.get(path).getNameCount();
+        return 0;
     }
 
     @Override
     public BoxFsPath getName(int index) {
-        return new BoxFsPath(fileSystem, Paths.get(path).getName(index).toString());
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public BoxFsPath subpath(int beginIndex, int endIndex) {
-        return new BoxFsPath(fileSystem, Paths.get(path).subpath(beginIndex, endIndex).toString());
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -87,23 +74,17 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath normalize() {
-        return new BoxFsPath(fileSystem, Paths.get(path).normalize().toString());
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public BoxFsPath resolve(Path other) {
-        Path resolved = Paths.get(path)
-                .resolve(Paths.get(other.toString()));
-
-        return new BoxFsPath(
-                fileSystem,
-                resolved.toString()
-        );
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public BoxFsPath resolve(String other) {
-        return new BoxFsPath(fileSystem, Paths.get(path).resolve(other).toString());
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -118,8 +99,7 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath relativize(Path other) {
-        Path relativized = Paths.get(path).relativize(Paths.get(other.toString()));
-        return new BoxFsPath(fileSystem, relativized.toString());
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -129,12 +109,15 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath toAbsolutePath() {
-        Path absolutePath = Paths.get(path).toAbsolutePath();
-        return new BoxFsPath(fileSystem, absolutePath.toString());
+        if (isAbsolute()) {
+            return this;
+        }
+
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
-    public BoxFsPath toRealPath(@NotNull LinkOption... options) throws IOException {
+    public BoxFsPath toRealPath(LinkOption... options) throws IOException {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -155,40 +138,11 @@ class BoxFsPath implements Path {
 
     @Override
     public Iterator<Path> iterator() {
-        final Iterator<Path> it = Paths.get(path).iterator();
-
-        return new Iterator<Path>() {
-            @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
-            public Path next() {
-                return new BoxFsPath(fileSystem, it.next().toString());
-            }
-        };
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public int compareTo(Path other) {
         throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public String toString() {
-        return this.path;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        BoxFsPath paths = (BoxFsPath) o;
-        return Objects.equals(path, paths.path);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(path);
     }
 }

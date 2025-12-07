@@ -5,10 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
+import java.util.Collection;
+import java.util.Optional;
 
 interface BoxFsNode {
-    static BoxFsNode newTree(String separator) {
-        return new BoxFsDirectory(separator);
+    static BoxFsNode newTree(BoxFsFileSystem fileSystem) {
+        return new BoxFsTree(fileSystem);
     }
 
     void createDirectory(Path path);
@@ -36,4 +38,10 @@ interface BoxFsNode {
     byte[] content() throws IOException;
 
     <V extends FileAttributeView> V fileAttributeView();
+
+    Collection<String> children();
+
+    Optional<BoxFsNode> parent();
+
+    BoxFsPath path();
 }

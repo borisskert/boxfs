@@ -12,7 +12,10 @@ class BoxFsFileSystem extends FileSystem {
     private static final String SEPARATOR = "/";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
-    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(SEPARATOR);
+    private final BoxFsNode fileTree = BoxFsNode.newTree(this);
+    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(fileTree, SEPARATOR);
+    private final BoxFsPath rootPath = new BoxFsRootPath(this);
+
 
     @Override
     public FileSystemProvider provider() {
@@ -31,7 +34,7 @@ class BoxFsFileSystem extends FileSystem {
 
     @Override
     public boolean isReadOnly() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return false;
     }
 
     @Override
@@ -41,7 +44,7 @@ class BoxFsFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.emptyList();
+        return Collections.singleton(rootPath);
     }
 
     @Override
@@ -56,7 +59,7 @@ class BoxFsFileSystem extends FileSystem {
 
     @Override
     public Path getPath(String first, String... more) {
-        return new BoxFsPath(this, SEPARATOR, first);
+        return new BoxFsPath(this, first);
     }
 
     @Override
@@ -72,5 +75,17 @@ class BoxFsFileSystem extends FileSystem {
     @Override
     public WatchService newWatchService() throws IOException {
         throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    BoxFsNode getFileTree() {
+        return fileTree;
+    }
+
+    BoxFsPath root() {
+        return rootPath;
+    }
+
+    String separator() {
+        return SEPARATOR;
     }
 }

@@ -5,37 +5,41 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 class BoxFsDirectory implements BoxFsNode {
 
+    private final BoxFsFileSystem fileSystem;
+    private final BoxFsDirectory parent;
+    private final String name;
     private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
 
-    private final String separator;
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
     private final BoxFsFileAttributeView attributeView = new BoxFsFileAttributeView(
             new BoxFsDirectoryAttributes()
     );
 
-    BoxFsDirectory(String separator) {
-        this.separator = separator;
-    }
-
-    BoxFsDirectory(BoxFsDirectory parent) {
-        this.separator = parent.separator;
+    BoxFsDirectory(BoxFsFileSystem fileSystem, BoxFsDirectory parent, String name) {
+        this.fileSystem = fileSystem;
+        this.parent = parent;
+        this.name = name;
     }
 
     @Override
     public void createDirectory(Path path) {
+        String name = path.getName(0).toString();
+
         children.putIfAbsent(
-                path.getName(0).toString(),
-                new BoxFsDirectory(this)
+                name,
+                new BoxFsDirectory(fileSystem, this, name)
         );
 
         if (path.getNameCount() > 1) {
             children.get(
-                            path.getName(0).toString()
+                            name
                     )
                     .createDirectory(
                             path.subpath(1, path.getNameCount())
@@ -49,20 +53,20 @@ class BoxFsDirectory implements BoxFsNode {
             return;
         }
 
-        String firstName = path.getName(0).toString();
+        String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
             children.putIfAbsent(
-                    firstName,
-                    new BoxFsFile()
+                    name,
+                    new BoxFsFile(fileSystem, this, name)
             );
         } else {
             children.putIfAbsent(
-                    firstName,
-                    new BoxFsDirectory(this)
+                    name,
+                    new BoxFsDirectory(fileSystem, this, name)
             );
 
-            children.get(firstName)
+            children.get(name)
                     .createFile(
                             path.subpath(1, path.getNameCount())
                     );
@@ -93,14 +97,14 @@ class BoxFsDirectory implements BoxFsNode {
             return false;
         }
 
-        String firstName = path.getName(0).toString();
+        String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return children.containsKey(firstName);
+            return children.containsKey(name);
         }
 
-        return children.containsKey(firstName)
-                && children.get(firstName)
+        return children.containsKey(name)
+                && children.get(name)
                 .exists(path.subpath(1, path.getNameCount()));
     }
 
@@ -130,14 +134,14 @@ class BoxFsDirectory implements BoxFsNode {
             throw new IllegalArgumentException("Path must not be empty");
         }
 
-        String firstName = path.getName(0).toString();
+        String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return children.get(firstName);
+            return children.get(name);
         }
 
         return children.get(
-                firstName
+                name
         ).readNode(
                 path.subpath(1, path.getNameCount())
         );
@@ -165,5 +169,29 @@ class BoxFsDirectory implements BoxFsNode {
         @SuppressWarnings("unchecked")
         V view = (V) this.attributeView;
         return view;
+    }
+
+    @Override
+    public Collection<String> children() {
+        return children.keySet();
+    }
+
+    @Override
+    public Optional<BoxFsNode> parent() {
+        return Optional.ofNullable(parent);
+    }
+
+    @Override
+    public BoxFsPath path() {
+        if (parent == null) {
+            return fileSystem.root();
+        }
+
+        return parent.path().resolve(name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

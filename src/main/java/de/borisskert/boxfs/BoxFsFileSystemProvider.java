@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.Set;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
-    private final BoxFsNode directories;
+    private final BoxFsNode fileTree;
 
-    BoxFsFileSystemProvider(String separator) {
-        this.directories = BoxFsNode.newTree(separator);
+    BoxFsFileSystemProvider(BoxFsNode fileTree, String separator) {
+        this.fileTree = fileTree;
     }
 
     @Override
@@ -42,23 +42,26 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-        directories.createFile(path);
-        return new BoxFsByteChannel(path, directories);
+        checkAccess(path.getParent(), AccessMode.WRITE);
+        fileTree.createFile(path);
+
+        return new BoxFsByteChannel(path, fileTree);
     }
 
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return new BoxFsDirectoryStream(dir, fileTree);
     }
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        directories.createDirectory(dir);
+        checkAccess(dir.getParent(), AccessMode.WRITE);
+        fileTree.createDirectory(dir);
     }
 
     @Override
     public void delete(Path path) throws IOException {
-        directories.delete(path);
+        fileTree.delete(path);
     }
 
     @Override
@@ -88,11 +91,11 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-        if (!directories.exists(path)) {
+        if (!fileTree.exists(path)) {
             throw new NoSuchFileException(path.toString());
         }
 
-        BoxFsNode boxFsNode = directories.readNode(path);
+        BoxFsNode boxFsNode = fileTree.readNode(path);
         BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
 
         if (!isAllowed(view.readAttributes().permissions(), modes)) {
@@ -102,14 +105,14 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        BoxFsNode entry = directories.readNode(path);
+        BoxFsNode entry = fileTree.readNode(path);
         return entry.fileAttributeView();
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-        if (directories.exists(path)) {
-            return directories.readNode(path).attributes();
+        if (fileTree.exists(path)) {
+            return fileTree.readNode(path).attributes();
         } else {
             throw new NoSuchFileException(path.toString());
         }
