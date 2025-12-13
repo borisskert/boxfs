@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Iterator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,6 +47,31 @@ abstract class PathTest {
             Path name1 = path.getName(1);
             assertThat(name1).isNotNull();
             assertThat(name1.toString()).isEqualTo("test");
+        }
+
+        @Nested
+        class Iterator {
+            java.util.Iterator<Path> iterator;
+
+            @BeforeEach
+            void setup() {
+                iterator = path.iterator();
+            }
+
+            @Test
+            void shouldIterateOverPathElements() {
+                assertThat(iterator).isNotNull();
+
+                assertThat(iterator.hasNext()).isTrue();
+                Path first = iterator.next();
+                assertThat(first.toString()).isEqualTo("tmp");
+
+                assertThat(iterator.hasNext()).isTrue();
+                Path second = iterator.next();
+                assertThat(second.toString()).isEqualTo("test");
+
+                assertThat(iterator.hasNext()).isFalse();
+            }
         }
 
         @Nested

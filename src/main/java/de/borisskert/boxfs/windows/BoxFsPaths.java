@@ -1,11 +1,15 @@
 package de.borisskert.boxfs.windows;
 
+import java.nio.file.InvalidPathException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class BoxFsPaths {
     private static final String SEPARATOR = "\\";
+    private static final String CURRENT_WORKING_DIRECTORY = "C:";
 
     private BoxFsPaths() {
         // utility class
@@ -22,116 +26,173 @@ class BoxFsPaths {
             return parts[0] + SEPARATOR;
         }
 
+        if (parts.length == 1) {
+            return null;
+        }
+
         String[] parentParts = Arrays.copyOf(parts, parts.length - 1);
         return String.join(SEPARATOR, parentParts);
     }
 
     public static boolean isAbsolute(String path) {
+        String nonNullPath = Objects.requireNonNull(path);
+        String validPath = requireValidPath(nonNullPath);
+
+        return validPath
+                .matches("^[A-Za-z]:\\\\(.*)?");
+    }
+
+    private static final Pattern ABSOLUTE_PATH_PATTERN = Pattern.compile("^[A-Za-z]:(\\\\(?<relativepath>.*)?)?$");
+
+    private static String requireValidPath(String path) {
         if (path == null) {
-            return false;
+            return null;
         }
 
-        return path.matches("^[A-Za-z]:(\\\\.*)?");
+        if (path.startsWith(SEPARATOR + SEPARATOR)) {
+            throw new InvalidPathException(path, "Is invalid");
+        }
+
+        Matcher matcher = ABSOLUTE_PATH_PATTERN.matcher(path);
+        if (matcher.matches()) { // is absolute path
+            String relativepath = matcher.group("relativepath");
+
+            if (relativepath != null && relativepath.contains(":")) {
+                throw new InvalidPathException(path, "Is invalid");
+            }
+        } else { // is relative path
+            if (path.contains(":")) {
+                throw new InvalidPathException(path, "Is invalid");
+            }
+        }
+
+        return path;
+    }
+
+    private static String relativePathOnly(String path) {
+        Matcher matcher = ABSOLUTE_PATH_PATTERN.matcher(path);
+
+        if (matcher.matches()) {
+            String relativepath = matcher.group("relativepath");
+            if (relativepath == null) {
+                return "";
+            } else {
+                return relativepath;
+            }
+        }
+
+        return path;
     }
 
     public static String relativize(String path, String other) {
+        path = normalize(path);
+        other = normalize(other);
+
         String[] a = path.split("\\\\");
         String[] b = other.split("\\\\");
 
-        // find common prefix length
+        boolean pathIsFile = a.length > 0 && a[a.length - 1].contains(".");
+
+        // find common prefix
         int i = 0;
         int max = Math.min(a.length, b.length);
         while (i < max && a[i].equals(b[i])) {
             i++;
         }
 
-        // if 'other' is within 'path': return the remainder from 'other'
+        // same directory
+        if (i == a.length && i == b.length) {
+            return pathIsFile ? ".." : "";
+        }
+
+        // other is inside path
         if (i == a.length && b.length > a.length) {
-            String[] remainder = Arrays.copyOfRange(b, i, b.length);
-            return String.join(SEPARATOR, remainder);
+            return String.join("\\", Arrays.copyOfRange(b, i, b.length));
         }
 
-        // if 'path' is within 'other'
+        // path is inside other
         if (i == b.length && a.length > b.length) {
-            String last = a[a.length - 1];
-            // if last looks like a file (has an extension), return file name
-            if (last.contains(".")) {
-                return last;
-            }
-
             int up = a.length - i;
-            String[] ups = new String[up];
-            Arrays.fill(ups, "..");
-            return String.join(SEPARATOR, ups);
+            return String.join("\\", Collections.nCopies(up, ".."));
         }
 
-        // default: build relative from 'path' to 'other'
+        // general case
         int up = a.length - i;
-        String[] ups = new String[up];
-        Arrays.fill(ups, "..");
-        String[] down = Arrays.copyOfRange(b, i, b.length);
+        String ups = String.join("\\", Collections.nCopies(up, ".."));
+        String down = String.join("\\", Arrays.copyOfRange(b, i, b.length));
 
-        if (down.length == 0) {
-            return String.join(SEPARATOR, ups);
+        if (ups.isEmpty()) return down;
+        if (down.isEmpty()) return ups;
+
+        return ups + "\\" + down;
+    }
+
+    private static String normalize(String p) {
+        if (p.endsWith("\\")) {
+            return p.substring(0, p.length() - 1);
         }
-
-        if (ups.length == 0) {
-            return String.join(SEPARATOR, down);
-        }
-
-        return String.join(SEPARATOR, ups) + SEPARATOR + String.join(SEPARATOR, down);
+        return p;
     }
 
     private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^(\\\\)+(?<path>[A-Za-z0-9._-].*)$");
 
     public static String toAbsolutePath(String path) {
-        if (path == null) {
-            return null;
+        path = Objects.requireNonNull(path);
+
+        if (path.isEmpty()) {
+            return CURRENT_WORKING_DIRECTORY;
+        }
+
+        if (path.startsWith(SEPARATOR + SEPARATOR)) {
+            return nonEndingSeparator(path);
         }
 
         if (isAbsolute(path)) {
             return path;
         }
 
-        Matcher matcher = RELATIVE_PATH_PATTERN.matcher(path);
-        if (matcher.matches()) {
-            return "C:\\" + matcher.group("path");
-        }
+        path = nonStartingSeparator(path);
+        path = nonEndingSeparator(path);
 
-        return "C:\\" + path;
+        return CURRENT_WORKING_DIRECTORY + SEPARATOR + path;
     }
 
-    private static String normalizePath(String path) {
-        String normalized = path;
+    private static String nonStartingAndEndingSeparator(String path) {
+        return nonEndingSeparator(nonStartingSeparator(path));
+    }
+
+    private static String nonStartingSeparator(String path) {
+        if (path == null) {
+            return null;
+        }
 
         Matcher matcher = RELATIVE_PATH_PATTERN.matcher(path);
         if (matcher.matches()) {
-            normalized = matcher.group("path");
+            return matcher.group("path");
         }
 
-        matcher = ENDING_SLASH.matcher(path);
+        return path;
+    }
+
+    private static String nonEndingSeparator(String path) {
+        if (path == null) {
+            return null;
+        }
+
+        Matcher matcher = ENDING_SLASH.matcher(path);
         if (matcher.matches()) {
-            normalized = matcher.group("path");
+            return matcher.group("path");
         }
 
-        if (normalized.equals(path)) {
-            return path;
-        }
-
-        return normalizePath(normalized);
+        return path;
     }
 
     private static final Pattern FILENAME_PATTERN = Pattern.compile("^[A-Za-z]:\\\\(.+\\\\)?(?<fileName>[^\\\\]+)$");
     private static final Pattern ENDING_SLASH = Pattern.compile("^(?<path>.*)\\\\$");
 
     public static String getFileName(String path) {
-        if (path == null) {
-            return null;
-        }
-
-        if (ENDING_SLASH.matcher(path).matches()) {
-            return "";
-        }
+        path = Objects.requireNonNull(path);
+        path = nonEndingSeparator(path);
 
         Matcher matcher = FILENAME_PATTERN.matcher(path);
 
@@ -143,14 +204,17 @@ class BoxFsPaths {
     }
 
     private static final Pattern DRIVE_LETTER_PATTERN = Pattern.compile("^(?<driveletter>[A-Za-z]:)(\\\\.*)?");
+    private static final Pattern ROOT_PATH_PATTERN = Pattern.compile("^([A-Za-z]:)(\\\\)?");
 
     public static String getRoot(String path) {
-        if (path == null) {
+        path = Objects.requireNonNull(path);
+
+        if (!ABSOLUTE_PATH_PATTERN.matcher(path).matches()) {
             return null;
         }
 
-        if (!isAbsolute(path)) {
-            return null;
+        if (ROOT_PATH_PATTERN.matcher(path).matches()) {
+            return path;
         }
 
         Matcher matcher = DRIVE_LETTER_PATTERN.matcher(path);
@@ -162,8 +226,10 @@ class BoxFsPaths {
     }
 
     public static int getNameCount(String path) {
-        if (path == null || path.isEmpty()) {
-            return 0;
+        path = Objects.requireNonNull(path);
+
+        if (path.isEmpty()) {
+            return 1;
         }
 
         String[] parts = path.split("\\\\");
@@ -176,9 +242,7 @@ class BoxFsPaths {
     }
 
     public static String getName(String path, int index) {
-        if (path == null) {
-            return null;
-        }
+        path = Objects.requireNonNull(path);
 
         if (isAbsolute(path)) {
             index += 1;
@@ -190,7 +254,7 @@ class BoxFsPaths {
             return parts[index];
         }
 
-        return null;
+        throw new IllegalArgumentException("Invalid index for getName");
     }
 
     public static String subpath(String path, int beginIndex, int endIndex) {
@@ -202,7 +266,7 @@ class BoxFsPaths {
             return null;
         }
 
-        path = normalizePath(path);
+        path = nonStartingSeparator(path);
 
         String[] parts = path.split("\\\\");
         if (isAbsolute(path)) {
@@ -216,7 +280,7 @@ class BoxFsPaths {
         }
 
         if (beginIndex == endIndex) {
-            return "";
+            throw new IllegalArgumentException("Invalid begin or end index for subpath");
         }
 
         throw new IllegalArgumentException("Invalid begin or end index for subpath");
@@ -231,6 +295,46 @@ class BoxFsPaths {
             return other;
         }
 
-        return normalizePath(path) + SEPARATOR + normalizePath(other);
+        if (isAbsolute(path)) {
+            if (other.startsWith(SEPARATOR)) {
+                return getRoot(path) + nonStartingAndEndingSeparator(other);
+            }
+
+            return nonEndingSeparator(path) + SEPARATOR + nonStartingAndEndingSeparator(other);
+        }
+
+        if (other.startsWith(SEPARATOR)) {
+            return other;
+        }
+
+        return nonStartingAndEndingSeparator(path) + SEPARATOR + nonStartingAndEndingSeparator(other);
+    }
+
+    public static java.util.Iterator<String> iterator(String path) {
+        path = Objects.requireNonNull(path);
+        path = requireValidPath(path);
+
+        if (isDriveLetterOnly(path)) {
+            return Collections.emptyIterator();
+        }
+
+        if (isAbsolute(path)) {
+            path = relativePathOnly(path);
+
+            if (path.isEmpty()) {
+                return Collections.emptyIterator();
+            }
+        }
+
+        path = nonStartingAndEndingSeparator(path);
+
+        String[] parts = path.split("\\\\");
+
+        return Arrays.asList(parts).iterator();
+    }
+
+    private static boolean isDriveLetterOnly(String path) {
+        Matcher matcher = DRIVE_LETTER_PATTERN.matcher(path);
+        return matcher.matches() && (matcher.group(2) == null || matcher.group(2).isEmpty());
     }
 }

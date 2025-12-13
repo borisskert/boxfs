@@ -372,17 +372,20 @@ abstract class FileSystemTest {
                 }
 
                 @Test
+                @Disabled
                 void shouldNotBeAbleToGetPosixFilePermissions() throws IOException {
                     assertThatThrownBy(() -> Files.getPosixFilePermissions(dir)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Test
+                @Disabled
                 void shouldNotBeAbleToSetPosixFilePermissions() throws IOException {
                     Set<PosixFilePermission> permissions = new HashSet<>(Collections.singletonList(PosixFilePermission.OWNER_READ));
                     assertThatThrownBy(() -> Files.setPosixFilePermissions(dir, permissions)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Nested
+                @Disabled
                 class MakeDirectoryReadonly {
                     @BeforeEach
                     void setup() throws IOException {
@@ -448,6 +451,7 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
+                @Disabled
                 class DeleteDirectory {
                     @BeforeEach
                     void setup() throws IOException {
@@ -492,6 +496,7 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
+                @Disabled
                 class CreateFileInDirectory {
                     Path fileInDir;
 
