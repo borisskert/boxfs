@@ -9,13 +9,14 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 class BoxFsDirectory implements BoxFsNode {
 
     private final BoxFsFileSystem fileSystem;
     private final BoxFsNode parent;
     private final String name;
-    private final Map<String, BoxFsNode> children = new ConcurrentHashMap<>();
+    private final Map<BoxFsFileName, BoxFsNode> children = new ConcurrentHashMap<>();
 
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
     private final BoxFsFileAttributeView attributeView = new BoxFsFileAttributeView(
@@ -33,13 +34,13 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         children.putIfAbsent(
-                name,
+                BoxFsFileName.of(name),
                 new BoxFsDirectory(fileSystem, this, name)
         );
 
         if (path.getNameCount() > 1) {
             children.get(
-                            name
+                            BoxFsFileName.of(name)
                     )
                     .createDirectory(
                             path.subpath(1, path.getNameCount())
@@ -57,16 +58,16 @@ class BoxFsDirectory implements BoxFsNode {
 
         if (path.getNameCount() == 1) {
             children.putIfAbsent(
-                    name,
+                    BoxFsFileName.of(name),
                     new BoxFsFile(fileSystem, this, name)
             );
         } else {
             children.putIfAbsent(
-                    name,
+                    BoxFsFileName.of(name),
                     new BoxFsDirectory(fileSystem, this, name)
             );
 
-            children.get(name)
+            children.get(BoxFsFileName.of(name))
                     .createFile(
                             path.subpath(1, path.getNameCount())
                     );
@@ -80,12 +81,12 @@ class BoxFsDirectory implements BoxFsNode {
         }
 
         if (path.getNameCount() == 1) {
-            children.remove(path.getName(0).toString());
+            children.remove(BoxFsFileName.of(path.getName(0).toString()));
             return;
         }
 
         children.get(
-                path.getName(0).toString()
+                BoxFsFileName.of(path.getName(0).toString())
         ).delete(
                 path.subpath(1, path.getNameCount())
         );
@@ -100,11 +101,11 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return children.containsKey(name);
+            return children.containsKey(BoxFsFileName.of(name));
         }
 
-        return children.containsKey(name)
-                && children.get(name)
+        return children.containsKey(BoxFsFileName.of(name))
+                && children.get(BoxFsFileName.of(name))
                 .exists(path.subpath(1, path.getNameCount()));
     }
 
@@ -137,11 +138,11 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return Optional.ofNullable(children.get(name));
+            return Optional.ofNullable(children.get(BoxFsFileName.of(name)));
         }
 
         return Optional.ofNullable(
-                children.get(name)
+                children.get(BoxFsFileName.of(name))
         ).flatMap(
                 n -> n.readNode(path.subpath(1, path.getNameCount()))
         );
@@ -173,7 +174,9 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public Collection<String> children() {
-        return children.keySet();
+        return children.keySet().stream()
+                .map(BoxFsFileName::name)
+                .collect(Collectors.toSet());
     }
 
     @Override

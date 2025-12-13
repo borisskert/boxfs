@@ -190,11 +190,19 @@ class BoxFsPath implements Path {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         BoxFsPath paths = (BoxFsPath) o;
-        return Objects.equals(path, paths.path);
+        return Objects.equals(toLowerCase(path), toLowerCase(paths.path));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(path);
+        return Objects.hashCode(toLowerCase(path));
+    }
+
+    private static String toLowerCase(String name) {
+        if (name == null) {
+            return null;
+        }
+
+        return name.toLowerCase();
     }
 }
