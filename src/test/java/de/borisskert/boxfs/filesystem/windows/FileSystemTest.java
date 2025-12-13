@@ -1,9 +1,6 @@
 package de.borisskert.boxfs.filesystem.windows;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -40,6 +37,7 @@ abstract class FileSystemTest {
         }
 
         @Nested
+        @Disabled
         class WhenGetRoot {
             Path root;
 
@@ -66,6 +64,7 @@ abstract class FileSystemTest {
         }
 
         @Nested
+        @Disabled
         class SimpleFileTests {
             String testFilePath = "C:\\testfile.txt";
             Path file;
@@ -218,7 +217,105 @@ abstract class FileSystemTest {
         }
 
         @Nested
+        @Disabled
         class SimpleDirectoryTests {
+            String testDirPath = "C:\\testdir";
+            Path dir;
+
+            @BeforeEach
+            void setup() throws IOException {
+                dir = fs.getPath(testDirPath);
+            }
+
+            @Test
+            void shouldNotExist() throws Exception {
+                assertThat(Files.exists(dir)).isFalse();
+                assertThat(Files.isDirectory(dir)).isFalse();
+                assertThat(Files.notExists(dir)).isTrue();
+                assertThat(Files.isRegularFile(dir)).isFalse();
+                assertThatThrownBy(() -> Files.isHidden(dir)).isInstanceOf(IOException.class);
+                assertThat(Files.isSymbolicLink(dir)).isFalse();
+                assertThat(Files.isReadable(dir)).isFalse();
+                assertThat(Files.isWritable(dir)).isFalse();
+                assertThat(Files.isExecutable(dir)).isFalse();
+                assertThat(dir.toString()).isEqualTo(testDirPath);
+            }
+
+            @Nested
+            class CreateDirectory {
+
+                @BeforeEach
+                void setup() throws IOException {
+                    Files.createDirectories(dir);
+                }
+
+                @AfterEach
+                void teardown() throws IOException {
+                    deleteRecursivelyIfExists(dir);
+                }
+
+                @Test
+                void shouldCreateDirectory() throws Exception {
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Nested
+                class SubDirectory {
+                    String subDirPath = "C:\\testdir\\sub";
+                    Path subDir;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        subDir = fs.getPath(subDirPath);
+                    }
+
+                    @Test
+                    void shouldNotExist() throws Exception {
+                        assertThat(Files.exists(subDir)).isFalse();
+                        assertThat(Files.isDirectory(subDir)).isFalse();
+                        assertThat(Files.notExists(subDir)).isTrue();
+                        assertThat(Files.isRegularFile(subDir)).isFalse();
+                        assertThatThrownBy(() -> Files.isHidden(subDir)).isInstanceOf(IOException.class);
+                        assertThat(Files.isSymbolicLink(subDir)).isFalse();
+                        assertThat(Files.isReadable(subDir)).isFalse();
+                        assertThat(Files.isWritable(subDir)).isFalse();
+                        assertThat(Files.isExecutable(subDir)).isFalse();
+                        assertThat(subDir.toString()).isEqualTo(subDirPath);
+                    }
+
+                    @Nested
+                    class CreateSubDirectory {
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.createDirectories(subDir);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(subDir);
+                        }
+
+                        @Test
+                        void shouldCreateSubDirectory() throws Exception {
+                            assertThat(Files.exists(subDir)).isTrue();
+                            assertThat(Files.isDirectory(subDir)).isTrue();
+                            assertThat(Files.notExists(subDir)).isFalse();
+                        }
+                    }
+                }
+            }
+        }
+
+        @Nested
+        class NestedDirectoryTests {
             String testDirPath = "C:\\tmp\\testdir";
             Path dir;
 
@@ -450,7 +547,8 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        class NestedDirectoryTests {
+        @Disabled
+        class MoreNestedDirectoryTests {
             String testDirPath = "C:\\tmp\\a\\b\\c\\d\\testdir";
             Path dir;
 

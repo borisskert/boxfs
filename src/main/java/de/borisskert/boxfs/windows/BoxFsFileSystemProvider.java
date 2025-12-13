@@ -54,7 +54,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        checkAccess(dir.getParent(), AccessMode.WRITE); // TODO check
+        checkAccess(dir.getParent(), AccessMode.WRITE); // TODO test
         fileTree.createDirectory(dir);
     }
 

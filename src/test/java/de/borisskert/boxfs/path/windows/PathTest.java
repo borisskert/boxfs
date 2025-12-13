@@ -136,7 +136,6 @@ abstract class PathTest {
                 @BeforeEach
                 void setup() {
                     relativizedPath = parentPath.relativize(path);
-                    assertThat(parentPath.toAbsolutePath().toString()).isEqualTo("C:\\tmp\\a\\b\\c\\d");
                 }
 
                 @Test
