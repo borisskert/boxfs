@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @EnabledOnOs(OS.WINDOWS)
 @DisplayName("Windows Paths")
-class PathsTest extends PathUtilsTest {
+class DefaultTest extends BoxFsPathsTest {
     @Override
     String parentOf(String path) {
         Path parent = Paths.get(path).getParent();

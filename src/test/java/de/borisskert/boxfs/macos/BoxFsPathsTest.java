@@ -1,15 +1,13 @@
-package de.borisskert.boxfs.windows;
+package de.borisskert.boxfs.macos;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.InvalidPathException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-abstract class PathUtilsTest {
+abstract class BoxFsPathsTest {
 
     abstract String parentOf(String path);
 
@@ -17,20 +15,20 @@ abstract class PathUtilsTest {
     class Parent {
         @Test
         void shouldGetParentOfSuperSimplePath() {
-            String parent = parentOf("C:\\directory");
-            assertThat(parent).isEqualTo("C:\\");
+            String parent = parentOf("/directory");
+            assertThat(parent).isEqualTo("/");
         }
 
         @Test
         void shouldGetParentOfSimplePath() {
-            String parent = parentOf("C:\\directory\\file.txt");
-            assertThat(parent).isEqualTo("C:\\directory");
+            String parent = parentOf("/directory/file.txt");
+            assertThat(parent).isEqualTo("/directory");
         }
 
         @Test
         void shouldGetParentOfSimpleNestedPath() {
-            String parent = parentOf("C:\\a\\b\\c\\d");
-            assertThat(parent).isEqualTo("C:\\a\\b\\c");
+            String parent = parentOf("/a/b/c/d");
+            assertThat(parent).isEqualTo("/a/b/c");
         }
 
         @Test
@@ -40,7 +38,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetParentOfRoot() {
-            String parent = parentOf("C:\\");
+            String parent = parentOf("/");
             assertThat(parent).isNull();
         }
     }
@@ -50,13 +48,8 @@ abstract class PathUtilsTest {
     @Nested
     class IsAbsolute {
         @Test
-        void shouldReturnTrueForDriveC() {
-            assertThat(isAbsolute("C:\\")).isTrue();
-        }
-
-        @Test
-        void shouldReturnFalseForDriveD() {
-            assertThat(isAbsolute("D:")).isFalse();
+        void shouldReturnTrueForRoot() {
+            assertThat(isAbsolute("/")).isTrue();
         }
 
         @Test
@@ -76,17 +69,12 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldReturnFalseForRoot() {
-            assertThat(isAbsolute("/")).isFalse();
+            assertThat(isAbsolute("/")).isTrue();
         }
 
         @Test
-        void shouldThrowForRootWithBackslash() {
-            assertThatThrownBy(() -> isAbsolute("\\\\")).isInstanceOf(InvalidPathException.class);
-        }
-
-        @Test
-        void shouldThrowForRootWithBackslashAndDriveLetter() {
-            assertThatThrownBy(() -> isAbsolute("\\C:\\")).isInstanceOf(InvalidPathException.class);
+        void shouldThrowForRootWithSeparator() {
+            assertThat(isAbsolute("//")).isTrue();
         }
 
         @Test
@@ -96,12 +84,12 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldReturnFalseForSimpleFileStartingWithSlash() {
-            assertThat(isAbsolute("\\file.txt")).isFalse();
+            assertThat(isAbsolute("/file.txt")).isTrue();
         }
 
         @Test
         void shouldReturnFalseForSimpleFileStartingWithDot() {
-            assertThat(isAbsolute(".\\file.txt")).isFalse();
+            assertThat(isAbsolute("./file.txt")).isFalse();
         }
     }
 
@@ -112,62 +100,62 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldRelativizeTheSameDirectory() {
-            String relativized = relativize("C:\\directory", "C:\\directory");
+            String relativized = relativize("/directory", "/directory");
             assertThat(relativized).isEqualTo("");
         }
 
         @Test
         void shouldRelativizeTheSameDirectoryWithEndingSlash() {
-            String relativized = relativize("C:\\directory", "C:\\directory\\");
+            String relativized = relativize("/directory", "/directory/");
             assertThat(relativized).isEqualTo("");
         }
 
         @Test
         void shouldRelativizeTheSameDirectoryWithEndingSlashInOppositeDirection() {
-            String relativized = relativize("C:\\directory\\", "C:\\directory");
+            String relativized = relativize("/directory/", "/directory");
             assertThat(relativized).isEqualTo("");
         }
 
         @Test
         void shouldRelativizeFileInSameDirectory() {
-            String relativized = relativize("C:\\directory", "C:\\directory\\file.txt");
+            String relativized = relativize("/directory", "/directory/file.txt");
             assertThat(relativized).isEqualTo("file.txt");
         }
 
         @Test
         void shouldRelativizeFileInSameDirectoryWithEndingSeparator() {
-            String relativized = relativize("C:\\directory\\", "C:\\directory\\file.txt");
+            String relativized = relativize("/directory/", "/directory/file.txt");
             assertThat(relativized).isEqualTo("file.txt");
         }
 
         @Test
         void shouldRelativizeFileInSameDirectoryInOtherDirection() {
-            String relativized = relativize("C:\\directory\\file.txt", "C:\\directory");
+            String relativized = relativize("/directory/file.txt", "/directory");
             assertThat(relativized).isEqualTo("..");
         }
 
         @Test
         void shouldRelativizeTwoLevels() {
-            String relativized = relativize("C:\\a\\b\\c\\d", "C:\\a");
-            assertThat(relativized).isEqualTo("..\\..\\..");
+            String relativized = relativize("/a/b/c/d", "/a");
+            assertThat(relativized).isEqualTo("../../..");
         }
 
         @Test
         void shouldRelativizeTwoLevelsInOppositeDirection() {
-            String relativized = relativize("C:\\a", "C:\\a\\b\\c\\d");
-            assertThat(relativized).isEqualTo("b\\c\\d");
+            String relativized = relativize("/a", "/a/b/c/d");
+            assertThat(relativized).isEqualTo("b/c/d");
         }
 
         @Test
         void shouldRelativizeNestedPath() {
-            String relativized = relativize("C:\\tmp\\a\\b\\c\\d", "C:\\tmp\\a\\b\\c\\d\\test");
+            String relativized = relativize("/tmp/a/b/c/d", "/tmp/a/b/c/d/test");
             assertThat(relativized).isEqualTo("test");
         }
 
         @Test
         void shouldRelativizeSimplePath() {
-            String relativized = relativize("C:\\", "C:\\tmp\\testdir");
-            assertThat(relativized).isEqualTo("tmp\\testdir");
+            String relativized = relativize("/", "/tmp/testdir");
+            assertThat(relativized).isEqualTo("tmp/testdir");
         }
     }
 
@@ -179,32 +167,32 @@ abstract class PathUtilsTest {
     class ToAbsolutePath {
         @Test
         void shouldReturnAbsolutePathOfSimplestRelativePath() {
-            assertThat(toAbsolutePath("test")).isEqualTo(currentWorkingDirectory() + "\\test");
+            assertThat(toAbsolutePath("test")).isEqualTo(currentWorkingDirectory() + "/test");
         }
 
         @Test
         void shouldReturnAbsolutePathOfSimpleRelativePath() {
-            assertThat(toAbsolutePath("tmp\\test")).isEqualTo(currentWorkingDirectory() + "\\tmp\\test");
+            assertThat(toAbsolutePath("tmp/test")).isEqualTo(currentWorkingDirectory() + "/tmp/test");
         }
 
         @Test
         void shouldReturnAbsolutePathOfRelativePath() {
-            assertThat(toAbsolutePath("a\\b\\c\\d")).isEqualTo(currentWorkingDirectory() + "\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("a/b/c/d")).isEqualTo(currentWorkingDirectory() + "/a/b/c/d");
         }
 
         @Test
         void shouldReturnAbsolutePathOfRelativePathWithEndingSlash() {
-            assertThat(toAbsolutePath("a\\b\\c\\d\\")).isEqualTo(currentWorkingDirectory() + "\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("a/b/c/d/")).isEqualTo(currentWorkingDirectory() + "/a/b/c/d");
         }
 
         @Test
         void shouldReturnAbsolutePathOfRelativePathWithStartingSlash() {
-            assertThat(toAbsolutePath("\\a\\b\\c\\d\\")).isEqualTo("C:\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("/a/b/c/d/")).isEqualTo("/a/b/c/d");
         }
 
         @Test
         void shouldReturnAbsolutePathOfRelativePathWithDoubleStartingSlash() {
-            assertThat(toAbsolutePath("\\\\a\\b\\c\\d\\")).isEqualTo("\\\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("//a/b/c/d/")).isEqualTo("/a/b/c/d");
         }
 
         @Test
@@ -219,7 +207,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldReturnSamePathForAbsolutePath() {
-            assertThat(toAbsolutePath("C:\\a\\b\\c\\d")).isEqualTo("C:\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("/a/b/c/d")).isEqualTo("/a/b/c/d");
         }
     }
 
@@ -229,7 +217,7 @@ abstract class PathUtilsTest {
     class GetFileName {
         @Test
         void shouldGetFileNameOfSimpleFile() {
-            assertThat(getFileName("C:\\tmp\\test")).isEqualTo("test");
+            assertThat(getFileName("/tmp/test")).isEqualTo("test");
         }
 
         @Test
@@ -239,7 +227,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetFileNameOfSimpleFileWithEndingSlash() {
-            assertThat(getFileName("C:\\tmp\\test\\")).isEqualTo("test");
+            assertThat(getFileName("/tmp/test/")).isEqualTo("test");
         }
 
         @Test
@@ -269,32 +257,12 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetRootForAbsolutePath() {
-            assertThat(getRoot("C:\\a\\b\\c")).isEqualTo("C:\\");
-        }
-
-        @Test
-        void shouldGetRootForAbsolutePathWithD() {
-            assertThat(getRoot("D:\\a\\b\\c")).isEqualTo("D:\\");
+            assertThat(getRoot("/a/b/c")).isEqualTo("/");
         }
 
         @Test
         void shouldGetRootForDrivePathC() {
-            assertThat(getRoot("C:\\")).isEqualTo("C:\\");
-        }
-
-        @Test
-        void shouldGetRootForDrivePathD() {
-            assertThat(getRoot("D:\\")).isEqualTo("D:\\");
-        }
-
-        @Test
-        void shouldGetRootForDriveLetterD() {
-            assertThat(getRoot("D:")).isEqualTo("D:");
-        }
-
-        @Test
-        void shouldGetRootForDriveLetterC() {
-            assertThat(getRoot("C:")).isEqualTo("C:");
+            assertThat(getRoot("/")).isEqualTo("/");
         }
     }
 
@@ -304,22 +272,22 @@ abstract class PathUtilsTest {
     class GetNameCount {
         @Test
         void shouldGetNameCountOfDirectoryAndFile() {
-            assertThat(getNameCount("C:\\directory\\file.txt")).isEqualTo(2);
+            assertThat(getNameCount("/directory/file.txt")).isEqualTo(2);
         }
 
         @Test
         void shouldGetNameCountOfNestedDirectories() {
-            assertThat(getNameCount("C:\\a\\b\\c\\d")).isEqualTo(4);
+            assertThat(getNameCount("/a/b/c/d")).isEqualTo(4);
         }
 
         @Test
         void shouldGetNameCountOfRootOnly() {
-            assertThat(getNameCount("C:\\")).isEqualTo(0);
+            assertThat(getNameCount("/")).isEqualTo(0);
         }
 
         @Test
         void shouldGetNameCountOfRelativePath() {
-            assertThat(getNameCount("directory\\file.txt")).isEqualTo(2);
+            assertThat(getNameCount("directory/file.txt")).isEqualTo(2);
         }
 
         @Test
@@ -352,18 +320,18 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetNamesOfSimplePath() {
-            assertThat(getName("C:\\directory\\file.txt", 0)).isEqualTo("directory");
-            assertThat(getName("C:\\directory\\file.txt", 1)).isEqualTo("file.txt");
-            assertThatThrownBy(() -> getName("C:\\directory\\file.txt", 2)).isInstanceOf(IllegalArgumentException.class);
+            assertThat(getName("/directory/file.txt", 0)).isEqualTo("directory");
+            assertThat(getName("/directory/file.txt", 1)).isEqualTo("file.txt");
+            assertThatThrownBy(() -> getName("/directory/file.txt", 2)).isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
         void shouldGetNamesOfNestedDirectories() {
-            assertThat(getName("C:\\a\\b\\c\\d\\", 0)).isEqualTo("a");
-            assertThat(getName("C:\\a\\b\\c\\d\\", 1)).isEqualTo("b");
-            assertThat(getName("C:\\a\\b\\c\\d\\", 2)).isEqualTo("c");
-            assertThat(getName("C:\\a\\b\\c\\d\\", 3)).isEqualTo("d");
-            assertThatThrownBy(() -> getName("C:\\a\\b\\c\\d\\", 4)).isInstanceOf(IllegalArgumentException.class);
+            assertThat(getName("/a/b/c/d/", 0)).isEqualTo("a");
+            assertThat(getName("/a/b/c/d/", 1)).isEqualTo("b");
+            assertThat(getName("/a/b/c/d/", 2)).isEqualTo("c");
+            assertThat(getName("/a/b/c/d/", 3)).isEqualTo("d");
+            assertThatThrownBy(() -> getName("/a/b/c/d/", 4)).isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -378,12 +346,12 @@ abstract class PathUtilsTest {
 
             @BeforeEach
             void setup() {
-                path = "C:\\tmp\\test";
+                path = "/tmp/test";
             }
 
             @Test
             void shouldReturnFor0To2() {
-                assertThat(subpath(path, 0, 2)).isEqualTo("tmp\\test");
+                assertThat(subpath(path, 0, 2)).isEqualTo("tmp/test");
             }
 
             @Test
@@ -420,12 +388,12 @@ abstract class PathUtilsTest {
 
             @BeforeEach
             void setup() {
-                path = "tmp\\test";
+                path = "tmp/test";
             }
 
             @Test
             void shouldReturnFor0To2() {
-                assertThat(subpath(path, 0, 2)).isEqualTo("tmp\\test");
+                assertThat(subpath(path, 0, 2)).isEqualTo("tmp/test");
             }
 
             @Test
@@ -458,9 +426,9 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetSubpathOfSimpleRelativePathStartingWithSeparator() {
-            String path = "\\tmp\\test";
+            String path = "/tmp/test";
 
-            assertThat(subpath(path, 0, 2)).isEqualTo("tmp\\test");
+            assertThat(subpath(path, 0, 2)).isEqualTo("tmp/test");
             assertThat(subpath(path, 0, 1)).isEqualTo("tmp");
             assertThat(subpath(path, 1, 2)).isEqualTo("test");
             assertThatThrownBy(() -> subpath(path, 0, 0)).isInstanceOf(IllegalArgumentException.class);
@@ -472,9 +440,9 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldGetSubpathOfSimpleRelativePathEndingWithSeparator() {
-            String path = "tmp\\test\\";
+            String path = "tmp/test/";
 
-            assertThat(subpath(path, 0, 2)).isEqualTo("tmp\\test");
+            assertThat(subpath(path, 0, 2)).isEqualTo("tmp/test");
             assertThat(subpath(path, 0, 1)).isEqualTo("tmp");
             assertThat(subpath(path, 1, 2)).isEqualTo("test");
             assertThatThrownBy(() -> subpath(path, 0, 0)).isInstanceOf(IllegalArgumentException.class);
@@ -504,68 +472,62 @@ abstract class PathUtilsTest {
     class Resolve {
         @Test
         void shouldResolveRelativePathAgainstAbsolutePath() {
-            String result = resolve("C:\\a\\b", "c\\d");
-            assertThat(result).isEqualTo("C:\\a\\b\\c\\d");
-        }
-
-        @Test
-        void shouldResolveAbsolutePathAgainstAbsolutePath() {
-            String result = resolve("C:\\a\\b", "D:\\c\\d");
-            assertThat(result).isEqualTo("D:\\c\\d");
+            String result = resolve("/a/b", "c/d");
+            assertThat(result).isEqualTo("/a/b/c/d");
         }
 
         @Test
         void shouldResolveRelativePathAgainstRelativePath() {
-            String result = resolve("a\\b", "c\\d");
-            assertThat(result).isEqualTo("a\\b\\c\\d");
+            String result = resolve("a/b", "c/d");
+            assertThat(result).isEqualTo("a/b/c/d");
         }
 
         @Test
         void shouldResolveRelativePathWithEndingSeparatorAgainstRelativePath() {
-            String result = resolve("a\\b\\", "c\\d");
-            assertThat(result).isEqualTo("a\\b\\c\\d");
+            String result = resolve("a/b/", "c/d");
+            assertThat(result).isEqualTo("a/b/c/d");
         }
 
         @Test
         void shouldResolveRelativePathAgainstRelativePathWithStartingSeparator() {
-            String result = resolve("a\\b", "\\c\\d");
-            assertThat(result).isEqualTo("\\c\\d");
+            String result = resolve("a/b", "/c/d");
+            assertThat(result).isEqualTo("/c/d");
         }
 
         @Test
         void shouldResolveRelativePathWithEndlingSeparatorAgainstRelativePathWithStartingSeparator() {
-            String result = resolve("a\\b\\", "\\c\\d");
-            assertThat(result).isEqualTo("\\c\\d");
+            String result = resolve("a/b/", "/c/d");
+            assertThat(result).isEqualTo("/c/d");
         }
 
         @Test
         void shouldResolveAbsolutePathAgainstRelativePathWithStartingSeparator() {
-            String result = resolve("C:\\a\\b", "\\c\\d");
-            assertThat(result).isEqualTo("C:\\c\\d");
+            String result = resolve("/a/b", "/c/d");
+            assertThat(result).isEqualTo("/c/d");
         }
 
         @Test
         void shouldResolveAbsolutePathWithEndingSeparatorAgainstRelativePathWithStartingSeparator() {
-            String result = resolve("C:\\a\\b\\", "\\c\\d");
-            assertThat(result).isEqualTo("C:\\c\\d");
+            String result = resolve("/a/b/", "/c/d");
+            assertThat(result).isEqualTo("/c/d");
         }
 
         @Test
         void shouldResolveAbsolutePathAgainstRelativePath() {
-            String result = resolve("C:\\a\\b", "c\\d");
-            assertThat(result).isEqualTo("C:\\a\\b\\c\\d");
+            String result = resolve("/a/b", "c/d");
+            assertThat(result).isEqualTo("/a/b/c/d");
         }
 
         @Test
         void shouldResolveAbsolutePathWithEndingSeparatorAgainstRelativePath() {
-            String result = resolve("C:\\a\\b\\", "c\\d");
-            assertThat(result).isEqualTo("C:\\a\\b\\c\\d");
+            String result = resolve("/a/b/", "c/d");
+            assertThat(result).isEqualTo("/a/b/c/d");
         }
 
         @Test
         void shouldResolveTestDir() {
-            String result = resolve("C:\\", "tmp\\testdir");
-            assertThat(result).isEqualTo("C:\\tmp\\testdir");
+            String result = resolve("/", "tmp/testdir");
+            assertThat(result).isEqualTo("/tmp/testdir");
         }
     }
 
@@ -590,25 +552,13 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldIterateOverRootC() {
-            java.util.Iterator<String> iterator = iterator("C:\\");
-            assertThat(iterator.hasNext()).isFalse();
-        }
-
-        @Test
-        void shouldIterateOverRootD() {
-            java.util.Iterator<String> iterator = iterator("D:\\");
-            assertThat(iterator.hasNext()).isFalse();
-        }
-
-        @Test
-        void shouldIterateOverDriveC() {
-            java.util.Iterator<String> iterator = iterator("C:");
+            java.util.Iterator<String> iterator = iterator("/");
             assertThat(iterator.hasNext()).isFalse();
         }
 
         @Test
         void shouldIterateOverSimpleAbsoluteNestedPath() {
-            String path = "C:\\tmp\\testDir";
+            String path = "/tmp/testDir";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
@@ -622,7 +572,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldIterateOverSimpleAbsoluteNestedPathWithEndingSeparator() {
-            String path = "C:\\tmp\\testDir\\";
+            String path = "/tmp/testDir/";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
@@ -636,19 +586,35 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldThrowWhenIterateOverSimpleAbsoluteNestedPathWithStartingSeparator() {
-            String path = "\\C:\\tmp\\testDir";
-            assertThatThrownBy(() -> iterator(path)).isInstanceOf(InvalidPathException.class);
+            String path = "//tmp/testDir";
+            java.util.Iterator<String> iterator = iterator(path);
+
+            assertThat(iterator.hasNext()).isTrue();
+            assertThat(iterator.next()).isEqualTo("tmp");
+
+            assertThat(iterator.hasNext()).isTrue();
+            assertThat(iterator.next()).isEqualTo("testDir");
+
+            assertThat(iterator.hasNext()).isFalse();
         }
 
         @Test
         void shouldThrowForSimpleAbsoluteNestedPathWithStartingAndEndingSeparator() {
-            String path = "\\C:\\tmp\\testDir\\";
-            assertThatThrownBy(() -> iterator(path)).isInstanceOf(InvalidPathException.class);
+            String path = "//tmp/testDir/";
+            java.util.Iterator<String> iterator = iterator(path);
+
+            assertThat(iterator.hasNext()).isTrue();
+            assertThat(iterator.next()).isEqualTo("tmp");
+
+            assertThat(iterator.hasNext()).isTrue();
+            assertThat(iterator.next()).isEqualTo("testDir");
+
+            assertThat(iterator.hasNext()).isFalse();
         }
 
         @Test
         void shouldIterateOverSimpleRelativeNestedPath() {
-            String path = "tmp\\testDir";
+            String path = "tmp/testDir";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
@@ -662,7 +628,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldIterateOverSimpleRelativeNestedPathWithStartingSeparator() {
-            String path = "\\tmp\\testDir";
+            String path = "/tmp/testDir";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
@@ -676,7 +642,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldIterateOverSimpleRelativeNestedPathWithEndingSeparator() {
-            String path = "tmp\\testDir\\";
+            String path = "tmp/testDir/";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
@@ -690,7 +656,7 @@ abstract class PathUtilsTest {
 
         @Test
         void shouldIterateOverSimpleRelativeNestedPathWithStartingAndEndingSeparator() {
-            String path = "\\tmp\\testDir\\";
+            String path = "/tmp/testDir/";
             java.util.Iterator<String> iterator = iterator(path);
 
             assertThat(iterator.hasNext()).isTrue();
