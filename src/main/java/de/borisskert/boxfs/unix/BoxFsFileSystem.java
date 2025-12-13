@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.macos;
+package de.borisskert.boxfs.unix;
 
 import java.io.IOException;
 import java.nio.file.*;

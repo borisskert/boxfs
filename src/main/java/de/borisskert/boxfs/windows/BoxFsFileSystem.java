@@ -89,7 +89,7 @@ public class BoxFsFileSystem extends FileSystem {
         return SEPARATOR;
     }
 
-    public static FileSystem windows() {
+    public static FileSystem create() {
         return new BoxFsFileSystem();
     }
 }

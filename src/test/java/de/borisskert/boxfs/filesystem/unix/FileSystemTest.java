@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.filesystem.macos;
+package de.borisskert.boxfs.filesystem.unix;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,21 +126,83 @@ abstract class FileSystemTest {
                     assertThat(Files.isSameFile(file, file)).isTrue();
                 }
 
-                @Test
-                void shouldFindFileInAnotherCase() throws IOException {
-                    Path pathWithDifferentCase = fs.getPath(testFilePath.toUpperCase());
+                @Nested
+                class PathInUppercase {
+                    String testFilePathUpperCase;
+                    Path pathWithDifferentCase;
 
-                    assertThat(Files.exists(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.notExists(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isRegularFile(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isReadable(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isWritable(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isExecutable(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.size(pathWithDifferentCase)).isEqualTo(0);
-                    assertThat(Files.isSameFile(pathWithDifferentCase, file)).isTrue();
+                    @BeforeEach
+                    void setup() {
+                        testFilePathUpperCase = testFilePath.toUpperCase();
+                        pathWithDifferentCase = fs.getPath(testFilePathUpperCase);
+                    }
+
+                    @Test
+                    void shouldNotFindFileInAnotherCase() throws IOException {
+                        assertThat(Files.exists(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.notExists(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isRegularFile(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isReadable(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isWritable(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isExecutable(pathWithDifferentCase)).isFalse();
+                        assertThatThrownBy(() -> Files.size(pathWithDifferentCase)).isInstanceOf(IOException.class);
+                        assertThatThrownBy(() -> Files.readAttributes(pathWithDifferentCase, "*")).isInstanceOf(IOException.class);
+                        assertThatThrownBy(() -> Files.getLastModifiedTime(pathWithDifferentCase)).isInstanceOf(IOException.class);
+                        assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
+                        assertThat(pathWithDifferentCase.toString()).isEqualTo(testFilePathUpperCase);
+                    }
+
+                    @Nested
+                    class CreateFileInAnotherCase {
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.createFile(pathWithDifferentCase);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.deleteIfExists(pathWithDifferentCase);
+                        }
+
+                        @Test
+                        void shouldCreateFile() throws Exception {
+                            assertThat(Files.exists(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.notExists(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isRegularFile(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isReadable(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isWritable(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isExecutable(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.size(pathWithDifferentCase)).isEqualTo(0);
+                            assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
+                        }
+
+                        @Test
+                        void shouldLeaveTheOtherFile() throws IOException {
+                            assertThat(Files.exists(file)).isTrue();
+                            assertThat(Files.isSameFile(pathWithDifferentCase, file)).isFalse();
+                        }
+
+                        @Test
+                        void shouldFindTwoFilesInRootDirectory() throws IOException {
+                            Path rootDir = fs.getRootDirectories().iterator().next();
+
+                            try (DirectoryStream<Path> paths = Files.newDirectoryStream(rootDir)) {
+                                Iterator<Path> iterator = paths.iterator();
+
+                                assertThat(iterator.hasNext()).isTrue();
+                                assertThat(iterator.next()).isEqualTo(file);
+                                assertThat(iterator.hasNext()).isTrue();
+                                assertThat(iterator.next()).isEqualTo(pathWithDifferentCase);
+                                assertThat(iterator.hasNext()).isFalse();
+                            }
+                        }
+                    }
                 }
 
                 @Nested
