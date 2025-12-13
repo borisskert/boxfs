@@ -1,6 +1,5 @@
 package de.borisskert.boxfs.windows;
 
-import java.nio.file.AccessMode;
 import java.nio.file.attribute.FileTime;
 
 class BoxFsDirectoryAttributes extends BoxFsAttributes {

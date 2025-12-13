@@ -1,11 +1,17 @@
 package de.borisskert.boxfs.filesystem.windows;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,7 +43,6 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        @Disabled
         class WhenGetRoot {
             Path root;
 
@@ -64,7 +69,6 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        @Disabled
         class SimpleFileTests {
             String testFilePath = "C:\\testfile.txt";
             Path file;
@@ -217,7 +221,6 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        @Disabled
         class SimpleDirectoryTests {
             String testDirPath = "C:\\testdir";
             Path dir;
@@ -372,20 +375,17 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                @Disabled
                 void shouldNotBeAbleToGetPosixFilePermissions() throws IOException {
                     assertThatThrownBy(() -> Files.getPosixFilePermissions(dir)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Test
-                @Disabled
                 void shouldNotBeAbleToSetPosixFilePermissions() throws IOException {
                     Set<PosixFilePermission> permissions = new HashSet<>(Collections.singletonList(PosixFilePermission.OWNER_READ));
                     assertThatThrownBy(() -> Files.setPosixFilePermissions(dir, permissions)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Nested
-                @Disabled
                 class MakeDirectoryReadonly {
                     @BeforeEach
                     void setup() throws IOException {
@@ -451,7 +451,6 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
-                @Disabled
                 class DeleteDirectory {
                     @BeforeEach
                     void setup() throws IOException {
@@ -496,7 +495,6 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
-                @Disabled
                 class CreateFileInDirectory {
                     Path fileInDir;
 
@@ -552,7 +550,6 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        @Disabled
         class MoreNestedDirectoryTests {
             String testDirPath = "C:\\tmp\\a\\b\\c\\d\\testdir";
             Path dir;

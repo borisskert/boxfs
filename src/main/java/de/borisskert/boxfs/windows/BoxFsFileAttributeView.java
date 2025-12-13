@@ -1,8 +1,9 @@
 package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
-import java.nio.file.attribute.*;
-import java.util.Set;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 
 class BoxFsFileAttributeView implements BasicFileAttributeView {
     private final BoxFsAttributes attributes;

@@ -59,8 +59,8 @@ public class WrappedFileSystem extends FileSystem {
 
     /**
      * Accepts virtual Windows style paths:
-     *   "C:\foo\bar", "\foo\bar", "foo\bar"
-     *
+     * "C:\foo\bar", "\foo\bar", "foo\bar"
+     * <p>
      * Always resolves inside realRoot so no escaping possible.
      */
     @Override

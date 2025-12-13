@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.Iterator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -119,6 +118,39 @@ abstract class PathTest {
             void shouldCreateNormalizedPath() {
                 assertThat(normalizedPath).isNotNull();
                 assertThat(normalizedPath.toString()).isEqualTo("C:\\tmp\\test");
+            }
+        }
+
+        @Nested
+        class ResolvePath {
+            Path resolvedPath;
+
+            @BeforeEach
+            void setup() {
+                resolvedPath = path.resolve("test2");
+            }
+
+            @Test
+            void shouldResolvePath() {
+                assertThat(resolvedPath).isNotNull();
+                assertThat(resolvedPath.toString()).isEqualTo("C:\\tmp\\test\\test2");
+                assertThat(resolvedPath.getFileName().toString()).isEqualTo("test2");
+                assertThat(resolvedPath.getParent().toString()).isEqualTo("C:\\tmp\\test");
+                assertThat(resolvedPath.getRoot().toString()).isEqualTo("C:\\");
+                assertThat(resolvedPath.getNameCount()).isEqualTo(3);
+                assertThat(resolvedPath.isAbsolute()).isTrue();
+
+                Path name0 = resolvedPath.getName(0);
+                assertThat(name0).isNotNull();
+                assertThat(name0.toString()).isEqualTo("tmp");
+
+                Path name1 = resolvedPath.getName(1);
+                assertThat(name1).isNotNull();
+                assertThat(name1.toString()).isEqualTo("test");
+
+                Path name2 = resolvedPath.getName(2);
+                assertThat(name2).isNotNull();
+                assertThat(name2.toString()).isEqualTo("test2");
             }
         }
     }

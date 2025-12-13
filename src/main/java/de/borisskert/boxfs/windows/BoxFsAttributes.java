@@ -4,9 +4,6 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 abstract class BoxFsAttributes implements BasicFileAttributes {
 

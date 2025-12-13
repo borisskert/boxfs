@@ -2,8 +2,6 @@ package de.borisskert.boxfs.windows;
 
 import org.junit.jupiter.api.DisplayName;
 
-import java.util.Iterator;
-
 @DisplayName("BoxFsPaths")
 class BoxFsPathsTest extends PathUtilsTest {
     @Override

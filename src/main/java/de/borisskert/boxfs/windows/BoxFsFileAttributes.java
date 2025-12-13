@@ -1,11 +1,6 @@
 package de.borisskert.boxfs.windows;
 
 import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Supplier;
 
 class BoxFsFileAttributes extends BoxFsAttributes {

@@ -105,7 +105,7 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath resolve(String other) {
-        return new BoxFsPath(fileSystem, Paths.get(path).resolve(other).toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.resolve(path, other));
     }
 
     @Override
@@ -161,7 +161,7 @@ class BoxFsPath implements Path {
 
     @Override
     public Iterator<Path> iterator() {
-        final Iterator<Path> it = Paths.get(path).iterator();
+        final Iterator<String> it = BoxFsPaths.iterator(this.path);
 
         return new Iterator<Path>() {
             @Override
@@ -171,7 +171,7 @@ class BoxFsPath implements Path {
 
             @Override
             public Path next() {
-                return new BoxFsPath(fileSystem, it.next().toString());
+                return new BoxFsPath(fileSystem, it.next());
             }
         };
     }
