@@ -1,9 +1,7 @@
 package de.borisskert.boxfs.macos;
 
 import java.nio.file.InvalidPathException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,7 +13,7 @@ class BoxFsPaths {
         // utility class
     }
 
-    public static String parentOf(String path) {
+    public static String getParent(String path) {
         if (!isAbsolute(path)) {
             return null;
         }
@@ -87,8 +85,8 @@ class BoxFsPaths {
     }
 
     public static String relativize(String path, String other) {
-        path = normalize(path);
-        other = normalize(other);
+        path = nonEndingSeparator(nonMultipleStartingSeparator(path));
+        other = nonEndingSeparator(nonMultipleStartingSeparator(other));
 
         String[] a = path.split(SEPARATOR);
         String[] b = other.split(SEPARATOR);
@@ -127,13 +125,6 @@ class BoxFsPaths {
         if (down.isEmpty()) return ups;
 
         return ups + BoxFsPaths.SEPARATOR + down;
-    }
-
-    private static String normalize(String p) {
-        if (p.endsWith(BoxFsPaths.SEPARATOR)) {
-            return p.substring(0, p.length() - 1);
-        }
-        return p;
     }
 
     private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^(/)+(?<path>[A-Za-z0-9._-].*)$");
@@ -340,5 +331,43 @@ class BoxFsPaths {
         String[] parts = path.split(SEPARATOR);
 
         return Arrays.asList(parts).iterator();
+    }
+
+    public static String normalize(String path) {
+        Objects.requireNonNull(path);
+
+        if (path.isEmpty()) {
+            return "";
+        }
+
+        boolean isAbsolute = path.startsWith("/");
+
+        // Split on slashes (multiple slashes are ignored)
+        String[] parts = path.split("/+");
+
+        Deque<String> stack = new ArrayDeque<String>();
+
+        for (String part : parts) {
+            if (part.isEmpty() || ".".equals(part)) {
+                continue;
+            }
+
+            if ("..".equals(part)) {
+                if (!stack.isEmpty()) {
+                    stack.removeLast();
+                }
+                continue;
+            }
+
+            stack.addLast(part);
+        }
+
+        String normalized = String.join("/", stack);
+
+        if (isAbsolute) {
+            normalized = "/" + normalized;
+        }
+
+        return normalized;
     }
 }

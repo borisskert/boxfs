@@ -11,36 +11,36 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 abstract class BoxFsPathsTest {
 
-    abstract String parentOf(String path);
+    abstract String getParent(String path);
 
     @Nested
     class Parent {
         @Test
         void shouldGetParentOfSuperSimplePath() {
-            String parent = parentOf("C:\\directory");
+            String parent = getParent("C:\\directory");
             assertThat(parent).isEqualTo("C:\\");
         }
 
         @Test
         void shouldGetParentOfSimplePath() {
-            String parent = parentOf("C:\\directory\\file.txt");
+            String parent = getParent("C:\\directory\\file.txt");
             assertThat(parent).isEqualTo("C:\\directory");
         }
 
         @Test
         void shouldGetParentOfSimpleNestedPath() {
-            String parent = parentOf("C:\\a\\b\\c\\d");
+            String parent = getParent("C:\\a\\b\\c\\d");
             assertThat(parent).isEqualTo("C:\\a\\b\\c");
         }
 
         @Test
         void shouldReturnNullForRelativeDirectory() {
-            assertThat(parentOf("directory")).isNull();
+            assertThat(getParent("directory")).isNull();
         }
 
         @Test
         void shouldGetParentOfRoot() {
-            String parent = parentOf("C:\\");
+            String parent = getParent("C:\\");
             assertThat(parent).isNull();
         }
     }
@@ -700,6 +700,190 @@ abstract class BoxFsPathsTest {
             assertThat(iterator.next()).isEqualTo("testDir");
 
             assertThat(iterator.hasNext()).isFalse();
+        }
+    }
+
+    abstract String normalize(String path);
+
+    @Nested
+    class Normalize {
+        @Test
+        void shouldNormalizeNull() {
+            assertThatThrownBy(() -> normalize(null)).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void shouldNormalizeEmpty() {
+            String normalized = normalize("");
+            assertThat(normalized).isEqualTo("");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteFilePathWithRedundantSeparators() {
+            String path = "C:\\tmp\\\\test\\\\\\file.txt";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\test\\file.txt");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteFilePathWithCurrentDirectoryReferences() {
+            String path = "C:\\tmp\\.\\test\\.\\file.txt";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\test\\file.txt");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteFilePathWithParentDirectoryReferences() {
+            String path = "C:\\tmp\\test\\..\\file.txt";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\file.txt");
+        }
+
+        @Test
+        void shouldNormalizeComplexAbsoluteFilePath() {
+            String path = "C:\\tmp\\\\.\\test\\\\..\\file.txt";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\file.txt");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteDirectoryPathWithRedundantSeparators() {
+            String path = "C:\\tmp\\\\test\\\\\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteDirectoryPathWithCurrentDirectoryReferences() {
+            String path = "C:\\tmp\\.\\test\\.\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeAbsoluteDirectoryPathWithParentDirectoryReferences() {
+            String path = "C:\\tmp\\test\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeComplexAbsoluteDirectoryPath() {
+            String path = "C:\\tmp\\\\.\\test\\\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("C:\\tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizerelativeDirectoryPathWithRedundantSeparators() {
+            String path = "tmp\\\\test\\\\\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithCurrentDirectoryReferences() {
+            String path = "tmp\\.\\test\\.\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithParentDirectoryReferences() {
+            String path = "tmp\\test\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeComplexRelativeDirectoryPath() {
+            String path = "tmp\\\\.\\test\\\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingSeparatorWithRedundantSeparators() {
+            String path = "\\tmp\\\\test\\\\\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingSeparatorWithCurrentDirectoryReferences() {
+            String path = "\\tmp\\.\\test\\.\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingSeparatorWithParentDirectoryReferences() {
+            String path = "\\tmp\\test\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeComplexRelativeDirectoryPathWithStartingSeparator() {
+            String path = "\\tmp\\\\.\\test\\\\..\\directory";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithEndingSeparatorWithRedundantSeparators() {
+            String path = "tmp\\\\test\\\\\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithEndingSeparatorWithCurrentDirectoryReferences() {
+            String path = "tmp\\.\\test\\.\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithEndingSeparatorWithParentDirectoryReferences() {
+            String path = "tmp\\test\\..\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeComplexRelativeDirectoryPathWithEndingSeparator() {
+            String path = "tmp\\\\.\\test\\\\..\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingAndEndingSeparatorWithRedundantSeparators() {
+            String path = "\\tmp\\\\test\\\\\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingAndEndingSeparatorWithCurrentDirectoryReferences() {
+            String path = "\\tmp\\.\\test\\.\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\test\\directory");
+        }
+
+        @Test
+        void shouldNormalizeRelativeDirectoryPathWithStartingAndEndingSeparatorWithParentDirectoryReferences() {
+            String path = "\\tmp\\test\\..\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\directory");
+        }
+
+        @Test
+        void shouldNormalizeComplexRelativeDirectoryPathWithStartingAndEndingSeparator() {
+            String path = "\\tmp\\\\.\\test\\\\..\\directory\\";
+            String normalized = normalize(path);
+            assertThat(normalized).isEqualTo("\\tmp\\directory");
         }
     }
 }

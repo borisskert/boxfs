@@ -160,4 +160,36 @@ abstract class PathTest {
             }
         }
     }
+
+    @Nested
+    class GetNonNormalizedPath {
+        Path path;
+
+        @BeforeEach
+        void setup() {
+            path = fs.getPath("/tmp/a/../b/./c/d/../test");
+        }
+
+        @Test
+        void shouldCreateNonNormalizedPath() {
+            assertThat(path).isNotNull();
+            assertThat(path.toString()).isEqualTo("/tmp/a/../b/./c/d/../test");
+        }
+
+        @Nested
+        class NormalizePath {
+            Path normalizedPath;
+
+            @BeforeEach
+            void setup() {
+                normalizedPath = path.normalize();
+            }
+
+            @Test
+            void shouldCreateNormalizedPath() {
+                assertThat(normalizedPath).isNotNull();
+                assertThat(normalizedPath.toString()).isEqualTo("/tmp/b/c/test");
+            }
+        }
+    }
 }

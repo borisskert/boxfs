@@ -12,7 +12,7 @@ import java.util.Optional;
 @DisplayName("MacOS Paths")
 class DefaultTest extends BoxFsPathsTest {
     @Override
-    String parentOf(String path) {
+    String getParent(String path) {
         Path parent = Paths.get(path).getParent();
 
         return Optional.ofNullable(parent)
@@ -89,5 +89,10 @@ class DefaultTest extends BoxFsPathsTest {
                 return iterator.next().toString();
             }
         };
+    }
+
+    @Override
+    String normalize(String path) {
+        return Paths.get(path).normalize().toString();
     }
 }

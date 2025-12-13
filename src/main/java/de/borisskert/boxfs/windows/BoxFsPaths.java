@@ -1,9 +1,7 @@
 package de.borisskert.boxfs.windows;
 
 import java.nio.file.InvalidPathException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,8 +83,8 @@ class BoxFsPaths {
     }
 
     public static String relativize(String path, String other) {
-        path = normalize(path);
-        other = normalize(other);
+        path = nonStartingAndEndingSeparator(path);
+        other = nonStartingAndEndingSeparator(other);
 
         String[] a = path.split("\\\\");
         String[] b = other.split("\\\\");
@@ -125,13 +123,6 @@ class BoxFsPaths {
         if (down.isEmpty()) return ups;
 
         return ups + "\\" + down;
-    }
-
-    private static String normalize(String p) {
-        if (p.endsWith("\\")) {
-            return p.substring(0, p.length() - 1);
-        }
-        return p;
     }
 
     private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^(\\\\)+(?<path>[A-Za-z0-9._-].*)$");
@@ -336,5 +327,55 @@ class BoxFsPaths {
     private static boolean isDriveLetterOnly(String path) {
         Matcher matcher = DRIVE_LETTER_PATTERN.matcher(path);
         return matcher.matches() && (matcher.group(2) == null || matcher.group(2).isEmpty());
+    }
+
+    public static String normalize(String path) {
+        Objects.requireNonNull(path);
+
+        if (path.isEmpty()) {
+            return "";
+        }
+
+        boolean hasLeadingSeparator = path.startsWith("\\");
+        boolean isAbsolute = path.matches("^[A-Za-z]:\\\\.*");
+
+        // Laufwerk extrahieren (z. B. "C:")
+        String prefix = "";
+        String rest = path;
+
+        if (isAbsolute) {
+            prefix = path.substring(0, 2); // "C:"
+            rest = path.substring(2);
+        }
+
+        // Split an Backslashes (mehrere hintereinander werden ignoriert)
+        String[] parts = rest.split("\\\\+");
+
+        Deque<String> stack = new ArrayDeque<>();
+
+        for (String part : parts) {
+            if (part.isEmpty() || part.equals(".")) {
+                continue;
+            }
+
+            if (part.equals("..")) {
+                if (!stack.isEmpty()) {
+                    stack.removeLast();
+                }
+                continue;
+            }
+
+            stack.addLast(part);
+        }
+
+        String normalized = String.join("\\", stack);
+
+        if (isAbsolute) {
+            normalized = prefix + "\\" + normalized;
+        } else if (hasLeadingSeparator) {
+            normalized = "\\" + normalized;
+        }
+
+        return normalized;
     }
 }

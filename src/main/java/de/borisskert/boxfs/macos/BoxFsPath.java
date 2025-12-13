@@ -31,38 +31,38 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath getRoot() {
-        Path root = Paths.get(path).getRoot();
+        String root = BoxFsPaths.getRoot(path);
 
         return Optional.ofNullable(root)
-                .map(r -> new BoxFsPath(fileSystem, r.toString()))
+                .map(r -> new BoxFsPath(fileSystem, r))
                 .orElse(null);
     }
 
     @Override
     public BoxFsPath getFileName() {
-        return new BoxFsPath(fileSystem, Paths.get(path).getFileName().toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.getFileName(path));
     }
 
     @Override
     public BoxFsPath getParent() {
-        return Optional.ofNullable(Paths.get(path).getParent())
-                .map(p -> new BoxFsPath(fileSystem, p.toString()))
+        return Optional.ofNullable(BoxFsPaths.getParent(path))
+                .map(p -> new BoxFsPath(fileSystem, p))
                 .orElse(null);
     }
 
     @Override
     public int getNameCount() {
-        return Paths.get(path).getNameCount();
+        return BoxFsPaths.getNameCount(path);
     }
 
     @Override
     public BoxFsPath getName(int index) {
-        return new BoxFsPath(fileSystem, Paths.get(path).getName(index).toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.getName(path, index));
     }
 
     @Override
     public BoxFsPath subpath(int beginIndex, int endIndex) {
-        return new BoxFsPath(fileSystem, Paths.get(path).subpath(beginIndex, endIndex).toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.subpath(path, beginIndex, endIndex));
     }
 
     @Override
@@ -87,23 +87,22 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath normalize() {
-        return new BoxFsPath(fileSystem, Paths.get(path).normalize().toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.normalize(path));
     }
 
     @Override
     public BoxFsPath resolve(Path other) {
-        Path resolved = Paths.get(path)
-                .resolve(Paths.get(other.toString()));
+        String resolved = BoxFsPaths.resolve(path, other.toString());
 
         return new BoxFsPath(
                 fileSystem,
-                resolved.toString()
+                resolved
         );
     }
 
     @Override
     public BoxFsPath resolve(String other) {
-        return new BoxFsPath(fileSystem, Paths.get(path).resolve(other).toString());
+        return new BoxFsPath(fileSystem, BoxFsPaths.resolve(path, other));
     }
 
     @Override
@@ -118,8 +117,8 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath relativize(Path other) {
-        Path relativized = Paths.get(path).relativize(Paths.get(other.toString()));
-        return new BoxFsPath(fileSystem, relativized.toString());
+        String relativized = BoxFsPaths.relativize(path, other.toString());
+        return new BoxFsPath(fileSystem, relativized);
     }
 
     @Override
@@ -129,8 +128,8 @@ class BoxFsPath implements Path {
 
     @Override
     public BoxFsPath toAbsolutePath() {
-        Path absolutePath = Paths.get(path).toAbsolutePath();
-        return new BoxFsPath(fileSystem, absolutePath.toString());
+        String absolutePath = BoxFsPaths.toAbsolutePath(path);
+        return new BoxFsPath(fileSystem, absolutePath);
     }
 
     @Override
@@ -155,7 +154,7 @@ class BoxFsPath implements Path {
 
     @Override
     public Iterator<Path> iterator() {
-        final Iterator<Path> it = Paths.get(path).iterator();
+        final Iterator<String> it = BoxFsPaths.iterator(path);
 
         return new Iterator<Path>() {
             @Override
@@ -165,7 +164,7 @@ class BoxFsPath implements Path {
 
             @Override
             public Path next() {
-                return new BoxFsPath(fileSystem, it.next().toString());
+                return new BoxFsPath(fileSystem, it.next());
             }
         };
     }

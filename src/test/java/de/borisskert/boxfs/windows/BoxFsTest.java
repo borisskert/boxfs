@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 @DisplayName("BoxFsPaths")
 class BoxFsTest extends BoxFsPathsTest {
     @Override
-    String parentOf(String path) {
+    String getParent(String path) {
         return BoxFsPaths.parentOf(path);
     }
 
@@ -62,5 +62,10 @@ class BoxFsTest extends BoxFsPathsTest {
     @Override
     java.util.Iterator<String> iterator(String path) {
         return BoxFsPaths.iterator(path);
+    }
+
+    @Override
+    String normalize(String path) {
+        return BoxFsPaths.normalize(path);
     }
 }
