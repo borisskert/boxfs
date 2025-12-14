@@ -161,6 +161,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public OutputStream newOutputStream(Path path, OpenOption... options) throws IOException {
+        if (!fileTree.exists(path)) {
+            fileTree.createFile(path);
+        }
+
         checkAccess(path, AccessMode.WRITE);
         return super.newOutputStream(path, options);
     }
