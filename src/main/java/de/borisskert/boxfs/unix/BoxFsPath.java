@@ -1,7 +1,5 @@
 package de.borisskert.boxfs.unix;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -133,7 +131,7 @@ class BoxFsPath implements Path {
     }
 
     @Override
-    public BoxFsPath toRealPath(@NotNull LinkOption... options) throws IOException {
+    public BoxFsPath toRealPath(LinkOption... options) throws IOException {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
