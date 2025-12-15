@@ -17,25 +17,72 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-        java:
-          - 8
-          - 11
-          - 17
-          - 21
-          - 25
+        include:
+          # --- Java 8 ---
+          - os: ubuntu-latest
+            java: 8
+            distribution: temurin
+
+          - os: windows-latest
+            java: 8
+            distribution: temurin
+
+          - os: macos-latest
+            java: 8
+            distribution: corretto
+
+          # --- Java 11 ---
+          - os: ubuntu-latest
+            java: 11
+            distribution: temurin
+          - os: windows-latest
+            java: 11
+            distribution: temurin
+          - os: macos-latest
+            java: 11
+            distribution: temurin
+
+          # --- Java 17 ---
+          - os: ubuntu-latest
+            java: 17
+            distribution: temurin
+          - os: windows-latest
+            java: 17
+            distribution: temurin
+          - os: macos-latest
+            java: 17
+            distribution: temurin
+
+          # --- Java 21 ---
+          - os: ubuntu-latest
+            java: 21
+            distribution: temurin
+          - os: windows-latest
+            java: 21
+            distribution: temurin
+          - os: macos-latest
+            java: 21
+            distribution: temurin
+
+          # --- Java 25 ---
+          - os: ubuntu-latest
+            java: 25
+            distribution: temurin
+          - os: windows-latest
+            java: 25
+            distribution: temurin
+          - os: macos-latest
+            java: 25
+            distribution: temurin
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up JDK ${{ matrix.java }}
+      - name: Set up JDK ${{ matrix.java }} (${{ matrix.distribution }})
         uses: actions/setup-java@v5
         with:
-          distribution: adopt
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
           cache: maven
 
