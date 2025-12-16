@@ -207,7 +207,7 @@ abstract class PathTest {
                     assertThat(relativizedPath.getParent()).isNull();
 
                     String absolute = relativizedPath.toAbsolutePath().toString();
-                    assertThat(absolute).isEqualTo(currentWorkingDirectory() +"\\test");
+                    assertThat(absolute).isEqualTo(currentWorkingDirectory() + "\\test");
                 }
             }
         }
