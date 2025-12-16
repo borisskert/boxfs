@@ -41,6 +41,14 @@ class DefaultTest extends BoxFsPathsTest {
     }
 
     @Override
+    String currentRoot() {
+        String currentWorkingDir = System.getProperty("user.dir");
+        Path currentRoot = Paths.get(currentWorkingDir).getRoot();
+
+        return currentRoot.toString();
+    }
+
+    @Override
     String getFileName(String path) {
         return Paths.get(path).getFileName().toString();
     }

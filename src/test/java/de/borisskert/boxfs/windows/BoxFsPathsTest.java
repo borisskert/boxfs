@@ -175,6 +175,8 @@ abstract class BoxFsPathsTest {
 
     abstract String currentWorkingDirectory();
 
+    abstract String currentRoot();
+
     @Nested
     class ToAbsolutePath {
         @Test
@@ -199,7 +201,7 @@ abstract class BoxFsPathsTest {
 
         @Test
         void shouldReturnAbsolutePathOfRelativePathWithStartingSlash() {
-            assertThat(toAbsolutePath("\\a\\b\\c\\d\\")).isEqualTo("C:\\a\\b\\c\\d");
+            assertThat(toAbsolutePath("\\a\\b\\c\\d\\")).isEqualTo(currentRoot() + "a\\b\\c\\d");
         }
 
         @Test

@@ -11,4 +11,9 @@ class BoxFsTest extends PathTest {
     FileSystem getFs() {
         return BoxFs.windows();
     }
+
+    @Override
+    String currentWorkingDirectory() {
+        return "C:";
+    }
 }
