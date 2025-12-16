@@ -15,4 +15,9 @@ class DefaultTest extends PathTest {
     FileSystem getFs() throws IOException {
         return FileSystems.getDefault();
     }
+
+    @Override
+    String currentWorkingDirectory() {
+        return System.getProperty("user.dir");
+    }
 }

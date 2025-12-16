@@ -233,7 +233,7 @@ abstract class FileSystemTest {
                         void shouldFindTwoFilesInRootDirectory() throws IOException {
                             try (DirectoryStream<Path> directorySteam = Files.newDirectoryStream(root)) {
                                 Set<Path> paths = toSet(directorySteam.iterator());
-                                assertThat(paths).containsExactly(file, pathWithDifferentCase);
+                                assertThat(paths).containsOnly(file, pathWithDifferentCase);
                             }
                         }
                     }

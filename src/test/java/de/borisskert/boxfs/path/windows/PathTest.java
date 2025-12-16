@@ -207,10 +207,11 @@ abstract class PathTest {
                     assertThat(relativizedPath.getParent()).isNull();
 
                     String absolute = relativizedPath.toAbsolutePath().toString();
-                    assertThat(absolute).startsWith("C:\\");
-                    assertThat(absolute).endsWith("\\test");
+                    assertThat(absolute).isEqualTo(currentWorkingDirectory() + "\\test");
                 }
             }
         }
     }
+
+    abstract String currentWorkingDirectory();
 }

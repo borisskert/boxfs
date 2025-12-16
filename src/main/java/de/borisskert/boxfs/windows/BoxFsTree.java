@@ -190,7 +190,7 @@ class BoxFsTree implements BoxFsNode {
     }
 
     private static char parseDriveLetter(String absolutePath) {
-        Matcher matcher = DRIVE_LETTER_PATTERN.matcher(absolutePath.toString());
+        Matcher matcher = DRIVE_LETTER_PATTERN.matcher(absolutePath);
 
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid path: " + absolutePath);

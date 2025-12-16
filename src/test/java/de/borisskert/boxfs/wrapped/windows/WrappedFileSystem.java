@@ -158,7 +158,7 @@ public class WrappedFileSystem extends FileSystem {
                 return VIRTUAL_ROOT;
             }
             // Path#toString uses backslashes on Windows; keep that
-            return VIRTUAL_ROOT + relative.toString();
+            return VIRTUAL_ROOT + relative;
         }
         // Not under our real root: show raw (should be rare)
         return real.toString();

@@ -30,6 +30,11 @@ class BoxFsTest extends BoxFsPathsTest {
     }
 
     @Override
+    String currentRoot() {
+        return "C:\\";
+    }
+
+    @Override
     String getFileName(String path) {
         return BoxFsPaths.getFileName(path);
     }
