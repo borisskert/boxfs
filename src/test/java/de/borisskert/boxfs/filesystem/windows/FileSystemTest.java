@@ -486,7 +486,7 @@ abstract class FileSystemTest {
                 @Test
                 void shouldFailWhenTryingToCreateFileWithSameNameAsDirectory() {
                     assertThatThrownBy(() -> Files.createFile(dir))
-                            .isInstanceOf(FileAlreadyExistsException.class);
+                            .isInstanceOf(AccessDeniedException.class);
                 }
 
                 @Test

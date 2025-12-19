@@ -2,6 +2,7 @@ package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -67,7 +68,12 @@ class BoxFsDrive implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            if (children.containsKey(BoxFsFileName.of(name))) {
+            BoxFsNode existing = children.get(BoxFsFileName.of(name));
+            if (existing != null) {
+                if (existing.isDirectory()) {
+                    throw new AccessDeniedException(path.toString());
+                }
+
                 throw new FileAlreadyExistsException(path.toString());
             }
 
