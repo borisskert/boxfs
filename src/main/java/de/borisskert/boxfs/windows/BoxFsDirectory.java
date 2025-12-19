@@ -33,29 +33,24 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public void createDirectory(Path path) throws IOException {
-        String name = path.getName(0).toString();
+        BoxFsFileName directoryName = BoxFsFileName.of(path.getName(0).toString());
 
         if (path.getNameCount() == 1) {
-            if (children.containsKey(BoxFsFileName.of(name))) {
+            if (children.containsKey(directoryName)) {
                 throw new FileAlreadyExistsException(path.toString());
             }
 
             children.put(
-                    BoxFsFileName.of(name),
-                    new BoxFsDirectory(fileSystem, this, name)
+                    directoryName,
+                    new BoxFsDirectory(fileSystem, this, directoryName.name())
             );
         } else {
-            children.putIfAbsent(
-                    BoxFsFileName.of(name),
-                    new BoxFsDirectory(fileSystem, this, name)
+            BoxFsNode nextDirectory = children.computeIfAbsent(
+                    directoryName,
+                    name -> new BoxFsDirectory(fileSystem, this, name.name())
             );
 
-            children.get(
-                            BoxFsFileName.of(name)
-                    )
-                    .createDirectory(
-                            path.subpath(1, path.getNameCount())
-                    );
+            nextDirectory.createDirectory(path.subpath(1, path.getNameCount()));
         }
     }
 
@@ -65,10 +60,10 @@ class BoxFsDirectory implements BoxFsNode {
             return;
         }
 
-        String name = path.getName(0).toString();
+        BoxFsFileName childName = BoxFsFileName.of(path.getName(0).toString());
 
         if (path.getNameCount() == 1) {
-            BoxFsNode existing = children.get(BoxFsFileName.of(name));
+            BoxFsNode existing = children.get(childName);
             if (existing != null) {
                 if (existing.isDirectory()) {
                     throw new AccessDeniedException(path.toString());
@@ -78,19 +73,16 @@ class BoxFsDirectory implements BoxFsNode {
             }
 
             children.put(
-                    BoxFsFileName.of(name),
-                    new BoxFsFile(fileSystem, this, name)
+                    childName,
+                    new BoxFsFile(fileSystem, this, childName.name())
             );
         } else {
-            children.putIfAbsent(
-                    BoxFsFileName.of(name),
-                    new BoxFsDirectory(fileSystem, this, name)
+            BoxFsNode nextDirectory = children.computeIfAbsent(
+                    childName,
+                    name -> new BoxFsDirectory(fileSystem, this, name.name())
             );
 
-            children.get(BoxFsFileName.of(name))
-                    .createFile(
-                            path.subpath(1, path.getNameCount())
-                    );
+            nextDirectory.createFile(path.subpath(1, path.getNameCount()));
         }
     }
 

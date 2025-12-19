@@ -31,29 +31,24 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public void createDirectory(Path path) throws IOException {
-        String name = path.getName(0).toString();
+        String childName = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            if (children.containsKey(name)) {
+            if (children.containsKey(childName)) {
                 throw new FileAlreadyExistsException(path.toString());
             }
 
             children.put(
-                    name,
-                    new BoxFsDirectory(fileSystem, this, name)
+                    childName,
+                    new BoxFsDirectory(fileSystem, this, childName)
             );
         } else {
-            children.putIfAbsent(
-                    name,
-                    new BoxFsDirectory(fileSystem, this, name)
+            BoxFsNode nextDirectory = children.computeIfAbsent(
+                    childName,
+                    n -> new BoxFsDirectory(fileSystem, this, n)
             );
 
-            children.get(
-                            name
-                    )
-                    .createDirectory(
-                            path.subpath(1, path.getNameCount())
-                    );
+            nextDirectory.createDirectory(path.subpath(1, path.getNameCount()));
         }
     }
 
@@ -75,15 +70,12 @@ class BoxFsDirectory implements BoxFsNode {
                     new BoxFsFile(fileSystem, this, name)
             );
         } else {
-            children.putIfAbsent(
+            BoxFsNode nextDirectory = children.computeIfAbsent(
                     name,
-                    new BoxFsDirectory(fileSystem, this, name)
+                    n -> new BoxFsDirectory(fileSystem, this, n)
             );
 
-            children.get(name)
-                    .createFile(
-                            path.subpath(1, path.getNameCount())
-                    );
+            nextDirectory.createFile(path.subpath(1, path.getNameCount()));
         }
     }
 
