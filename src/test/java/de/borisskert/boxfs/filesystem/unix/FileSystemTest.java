@@ -155,9 +155,20 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                @Disabled
                 void shouldFailWhenTryingToCreateSameFileAgain() {
                     assertThatThrownBy(() -> Files.createFile(file))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateDirectoryWithSameNameAsFile() {
+                    assertThatThrownBy(() -> Files.createDirectory(file))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateFileWithCreateNewOption() {
+                    assertThatThrownBy(() -> Files.newByteChannel(file, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
                             .isInstanceOf(FileAlreadyExistsException.class);
                 }
 
@@ -376,6 +387,18 @@ abstract class FileSystemTest {
                     assertThat(Files.isReadable(dir)).isTrue();
                     assertThat(Files.isWritable(dir)).isTrue();
                     assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateSameDirectoryAgain() {
+                    assertThatThrownBy(() -> Files.createDirectory(dir))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateFileWithSameNameAsDirectory() {
+                    assertThatThrownBy(() -> Files.createFile(dir))
+                            .isInstanceOf(FileAlreadyExistsException.class);
                 }
 
                 @Nested

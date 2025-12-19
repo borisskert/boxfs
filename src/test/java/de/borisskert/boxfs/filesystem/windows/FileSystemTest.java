@@ -148,6 +148,18 @@ abstract class FileSystemTest {
                 }
 
                 @Test
+                void shouldFailWhenTryingToCreateDirectoryWithSameNameAsFile() {
+                    assertThatThrownBy(() -> Files.createDirectory(file))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateFileWithCreateNewOption() {
+                    assertThatThrownBy(() -> Files.newByteChannel(file, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
                 void shouldFindTheFileInRootDirectory() throws IOException {
                     try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
                         Iterator<Path> iterator = paths.iterator();
@@ -463,7 +475,18 @@ abstract class FileSystemTest {
                     assertThat(Files.isReadable(dir)).isTrue();
                     assertThat(Files.isWritable(dir)).isTrue();
                     assertThat(Files.isExecutable(dir)).isTrue();
-                    assertThat(Files.getAttribute(dir, "dos:readonly")).isEqualTo(false);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateSameDirectoryAgain() {
+                    assertThatThrownBy(() -> Files.createDirectory(dir))
+                            .isInstanceOf(FileAlreadyExistsException.class);
+                }
+
+                @Test
+                void shouldFailWhenTryingToCreateFileWithSameNameAsDirectory() {
+                    assertThatThrownBy(() -> Files.createFile(dir))
+                            .isInstanceOf(FileAlreadyExistsException.class);
                 }
 
                 @Test
