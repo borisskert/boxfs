@@ -50,6 +50,8 @@ class BoxFsByteChannel implements SeekableByteChannel {
         BoxFsNode fileNode = tree.readNode(path)
                 .orElseThrow(() -> new RuntimeException("Node not found"));
         fileNode.writeContent(path, src);
+
+        position.set(position.get() + bytes);
         return bytes;
     }
 

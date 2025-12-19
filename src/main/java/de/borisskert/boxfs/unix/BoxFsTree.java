@@ -19,17 +19,17 @@ class BoxFsTree implements BoxFsNode {
     }
 
     @Override
-    public void createDirectory(Path path) {
+    public void createDirectory(Path path) throws IOException {
         rootDirectory.createDirectory(path);
     }
 
     @Override
-    public void createFile(Path path) {
+    public void createFile(Path path) throws IOException {
         rootDirectory.createFile(path);
     }
 
     @Override
-    public void delete(Path path) {
+    public void delete(Path path) throws IOException {
         rootDirectory.delete(path);
     }
 

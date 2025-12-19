@@ -13,11 +13,11 @@ interface BoxFsNode {
         return new BoxFsTree(fileSystem);
     }
 
-    void createDirectory(Path path);
+    void createDirectory(Path path) throws IOException;
 
-    void createFile(Path path);
+    void createFile(Path path) throws IOException;
 
-    void delete(Path path);
+    void delete(Path path) throws IOException;
 
     boolean exists(Path path);
 

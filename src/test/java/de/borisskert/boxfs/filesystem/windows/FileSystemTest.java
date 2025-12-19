@@ -1,6 +1,9 @@
 package de.borisskert.boxfs.filesystem.windows;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -96,6 +99,22 @@ abstract class FileSystemTest {
             }
 
             @Nested
+            class WriteToNonExistingFile {
+                @AfterEach
+                void teardown() throws IOException {
+                    Files.deleteIfExists(file);
+                }
+
+                @Test
+                void shouldCreateFileWhenWritingToNonExistingFile() throws IOException {
+                    Files.write(file, "Hello World!".getBytes());
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                }
+            }
+
+            @Nested
             class CreateFile {
                 @BeforeEach
                 void setup() throws IOException {
@@ -123,7 +142,6 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                @Disabled
                 void shouldFailWhenTryingToCreateSameFileAgain() {
                     assertThatThrownBy(() -> Files.createFile(file))
                             .isInstanceOf(FileAlreadyExistsException.class);
@@ -158,7 +176,6 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                @Disabled
                 void shouldFailWhenTryingToCreateFileInAnotherCase() {
                     Path pathWithDifferentCase = fs.getPath(testFilePath.toUpperCase());
 
@@ -275,6 +292,20 @@ abstract class FileSystemTest {
                         void shouldBeAbleToWriteContent() throws Exception {
                             Files.write(file, "Hello World!".getBytes());
                             assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                        }
+
+                        @Test
+                        void shouldWriteLargeContentToFile() throws Exception {
+                            Path largeFile = fs.getPath("C:\\largefile.txt");
+                            Files.createFile(largeFile);
+
+                            byte[] largeContent = new byte[1024 * 1024];
+                            for (int i = 0; i < largeContent.length; i++) {
+                                largeContent[i] = (byte) (i % 256);
+                            }
+
+                            Files.write(largeFile, largeContent);
+                            assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                         }
                     }
                 }

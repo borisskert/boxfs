@@ -30,17 +30,17 @@ class BoxFsFile implements BoxFsNode {
     // -----------------------------------------------------------------------------------------------------
 
     @Override
-    public void createDirectory(Path path) {
+    public void createDirectory(Path path) throws IOException {
         throw new UnsupportedOperationException("Cannot create a directory inside a file");
     }
 
     @Override
-    public void createFile(Path path) {
+    public void createFile(Path path) throws IOException {
         throw new UnsupportedOperationException("Cannot create a file inside a file");
     }
 
     @Override
-    public void delete(Path path) {
+    public void delete(Path path) throws IOException {
         throw new UnsupportedOperationException("Cannot delete a file inside a file");
     }
 

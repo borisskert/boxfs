@@ -112,6 +112,22 @@ abstract class FileSystemTest {
             }
 
             @Nested
+            class WriteToNonExistingFile {
+                @AfterEach
+                void teardown() throws IOException {
+                    Files.deleteIfExists(file);
+                }
+
+                @Test
+                void shouldCreateFileWhenWritingToNonExistingFile() throws IOException {
+                    Files.write(file, "Hello World!".getBytes());
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                }
+            }
+
+            @Nested
             class CreateFile {
                 @BeforeEach
                 void setup() throws IOException {
@@ -251,6 +267,20 @@ abstract class FileSystemTest {
                         assertThat(Files.size(file)).isEqualTo(12);
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                         assertThat(Files.isSameFile(file, file)).isTrue();
+                    }
+
+                    @Test
+                    void shouldWriteLargeContentToFile() throws Exception {
+                        Path largeFile = fs.getPath("/largefile.txt");
+                        Files.createFile(largeFile);
+
+                        byte[] largeContent = new byte[1024 * 1024];
+                        for (int i = 0; i < largeContent.length; i++) {
+                            largeContent[i] = (byte) (i % 256);
+                        }
+
+                        Files.write(largeFile, largeContent);
+                        assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                     }
                 }
 

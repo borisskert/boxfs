@@ -4,10 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,8 +44,18 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-        checkAccess(path.getParent(), AccessMode.WRITE);
-        fileTree.createFile(path);
+        boolean create = options.contains(StandardOpenOption.CREATE);
+        boolean createNew = options.contains(StandardOpenOption.CREATE_NEW);
+        boolean write = options.contains(StandardOpenOption.WRITE) || options.contains(StandardOpenOption.APPEND);
+
+        if (createNew || (create && Files.notExists(path))) {
+            checkAccess(path.getParent(), AccessMode.WRITE);
+            fileTree.createFile(path);
+        } else if (!fileTree.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        } else if (write) {
+            checkAccess(path, AccessMode.WRITE);
+        }
 
         return new BoxFsByteChannel(path, fileTree);
     }
@@ -189,7 +202,15 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public OutputStream newOutputStream(Path path, OpenOption... options) throws IOException {
-        checkAccess(path, AccessMode.WRITE);
-        return super.newOutputStream(path, options);
+        Set<OpenOption> set = new HashSet<>(options.length);
+        Collections.addAll(set, options);
+
+        if (set.isEmpty()) {
+            set.add(StandardOpenOption.CREATE);
+            set.add(StandardOpenOption.TRUNCATE_EXISTING);
+            set.add(StandardOpenOption.WRITE);
+        }
+
+        return Channels.newOutputStream(newByteChannel(path, set));
     }
 }

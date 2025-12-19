@@ -2,6 +2,7 @@ package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
@@ -28,7 +29,7 @@ class BoxFsDrive implements BoxFsNode {
 
 
     @Override
-    public void createDirectory(Path path) {
+    public void createDirectory(Path path) throws IOException {
         if (path.getNameCount() < 1) {
             return;
         }
@@ -36,7 +37,11 @@ class BoxFsDrive implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            children.putIfAbsent(
+            if (children.containsKey(BoxFsFileName.of(name))) {
+                throw new FileAlreadyExistsException(path.toString());
+            }
+
+            children.put(
                     BoxFsFileName.of(name),
                     new BoxFsDirectory(fileSystem, this, name)
             );
@@ -54,19 +59,28 @@ class BoxFsDrive implements BoxFsNode {
     }
 
     @Override
-    public void createFile(Path path) {
+    public void createFile(Path path) throws IOException {
         if (path.getNameCount() < 1) {
             return;
         }
 
         String name = path.getName(0).toString();
 
-        children.putIfAbsent(
-                BoxFsFileName.of(name),
-                new BoxFsFile(fileSystem, this, name)
-        );
+        if (path.getNameCount() == 1) {
+            if (children.containsKey(BoxFsFileName.of(name))) {
+                throw new FileAlreadyExistsException(path.toString());
+            }
 
-        if (path.getNameCount() > 1) {
+            children.put(
+                    BoxFsFileName.of(name),
+                    new BoxFsFile(fileSystem, this, name)
+            );
+        } else {
+            children.putIfAbsent(
+                    BoxFsFileName.of(name),
+                    new BoxFsDirectory(fileSystem, this, name)
+            );
+
             children.get(BoxFsFileName.of(name))
                     .createFile(
                             path.subpath(1, path.getNameCount())
@@ -75,7 +89,7 @@ class BoxFsDrive implements BoxFsNode {
     }
 
     @Override
-    public void delete(Path path) {
+    public void delete(Path path) throws IOException {
         if (path.getNameCount() < 1) {
             return;
         }
