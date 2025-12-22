@@ -208,6 +208,20 @@ abstract class FileSystemTest {
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                         assertThat(Files.isSameFile(file, file)).isTrue();
                     }
+
+                    @Test
+                    void shouldWriteLargeContentToFile() throws Exception {
+                        Path largeFile = fs.getPath("C:\\largefile.txt");
+                        Files.createFile(largeFile);
+
+                        byte[] largeContent = new byte[1024 * 1024];
+                        for (int i = 0; i < largeContent.length; i++) {
+                            largeContent[i] = (byte) (i % 256);
+                        }
+
+                        Files.write(largeFile, largeContent);
+                        assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
+                    }
                 }
 
                 @Test
@@ -304,20 +318,6 @@ abstract class FileSystemTest {
                         void shouldBeAbleToWriteContent() throws Exception {
                             Files.write(file, "Hello World!".getBytes());
                             assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
-                        }
-
-                        @Test
-                        void shouldWriteLargeContentToFile() throws Exception {
-                            Path largeFile = fs.getPath("C:\\largefile.txt");
-                            Files.createFile(largeFile);
-
-                            byte[] largeContent = new byte[1024 * 1024];
-                            for (int i = 0; i < largeContent.length; i++) {
-                                largeContent[i] = (byte) (i % 256);
-                            }
-
-                            Files.write(largeFile, largeContent);
-                            assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                         }
                     }
                 }
@@ -578,7 +578,6 @@ abstract class FileSystemTest {
                         assertThat(Files.isDirectory(dir)).isFalse();
                         assertThat(Files.notExists(dir)).isTrue();
                         assertThat(Files.isRegularFile(dir)).isFalse();
-//                        assertThat(Files.isHidden(dir)).isFalse();
                         assertThatThrownBy(() -> Files.isHidden(dir)).isInstanceOf(IOException.class);
                         assertThat(Files.isSymbolicLink(dir)).isFalse();
                         assertThat(Files.isReadable(dir)).isFalse();
@@ -599,7 +598,6 @@ abstract class FileSystemTest {
                             assertThat(Files.isDirectory(dir)).isFalse();
                             assertThat(Files.notExists(dir)).isTrue();
                             assertThat(Files.isRegularFile(dir)).isFalse();
-//                            assertThat(Files.isHidden(dir)).isFalse();
                             assertThatThrownBy(() -> Files.isHidden(dir)).isInstanceOf(IOException.class);
                             assertThat(Files.isSymbolicLink(dir)).isFalse();
                             assertThat(Files.isReadable(dir)).isFalse();

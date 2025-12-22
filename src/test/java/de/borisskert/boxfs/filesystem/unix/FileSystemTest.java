@@ -107,7 +107,7 @@ abstract class FileSystemTest {
             }
 
             @Test
-            void shouldFindTwoFilesInRootDirectory() throws IOException {
+            void shouldNotFindAnyFilesInRootDirectory() throws IOException {
                 try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
                     Iterator<Path> iterator = paths.iterator();
                     assertThat(iterator.hasNext()).isFalse();
@@ -176,7 +176,7 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                void shouldFindTwoFilesInRootDirectory() throws IOException {
+                void shouldFindTheFileInRootDirectory() throws IOException {
                     try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
                         Iterator<Path> iterator = paths.iterator();
 
@@ -212,11 +212,12 @@ abstract class FileSystemTest {
                         assertThatThrownBy(() -> Files.readAttributes(pathWithDifferentCase, "*")).isInstanceOf(IOException.class);
                         assertThatThrownBy(() -> Files.getLastModifiedTime(pathWithDifferentCase)).isInstanceOf(IOException.class);
                         assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isSameFile(pathWithDifferentCase, file)).isFalse();
                         assertThat(pathWithDifferentCase.toString()).isEqualTo(testFilePathUpperCase);
                     }
 
                     @Test
-                    void shouldFindTwoFilesInRootDirectory() throws IOException {
+                    void shouldFindOneFileInRootDirectory() throws IOException {
                         try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
                             Iterator<Path> iterator = paths.iterator();
 
@@ -260,10 +261,34 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldFindTwoFilesInRootDirectory() throws IOException {
+                        void shouldFindBothFilesInRootDirectory() throws IOException {
                             try (DirectoryStream<Path> directorySteam = Files.newDirectoryStream(root)) {
                                 Set<Path> paths = toSet(directorySteam.iterator());
                                 assertThat(paths).containsOnly(file, pathWithDifferentCase);
+                            }
+                        }
+
+                        @Nested
+                        class WriteShortContentToFileWitAnotherCase {
+                            @BeforeEach
+                            void setup() throws IOException {
+                                Files.write(pathWithDifferentCase, "Hello World!".getBytes());
+                            }
+
+                            @Test
+                            void shouldWriteToFile() throws Exception {
+                                assertThat(Files.exists(pathWithDifferentCase)).isTrue();
+                                assertThat(Files.size(pathWithDifferentCase)).isEqualTo(12);
+                                assertThat(Files.readAllBytes(pathWithDifferentCase)).isEqualTo("Hello World!".getBytes());
+                                assertThat(Files.isSameFile(pathWithDifferentCase, file)).isFalse();
+                            }
+
+                            @Test
+                            void shouldNotHaveContentInOtherFile() throws Exception {
+                                assertThat(Files.exists(file)).isTrue();
+                                assertThat(Files.size(file)).isEqualTo(0);
+                                assertThat(Files.readAllBytes(file)).isEqualTo("".getBytes());
+                                assertThat(Files.isSameFile(file, pathWithDifferentCase)).isFalse();
                             }
                         }
                     }
@@ -296,17 +321,6 @@ abstract class FileSystemTest {
                         Files.write(largeFile, largeContent);
                         assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                     }
-                }
-
-                @Test
-                void shouldWriteToNotExistingFileWithAnotherCase() throws IOException {
-                    Path fileWithAnotherCase = fs.getPath(testFilePath.toUpperCase());
-                    Files.write(fileWithAnotherCase, "Hello World!".getBytes());
-
-                    assertThat(Files.exists(fileWithAnotherCase)).isTrue();
-                    assertThat(Files.size(fileWithAnotherCase)).isEqualTo(12);
-                    assertThat(Files.readAllBytes(fileWithAnotherCase)).isEqualTo("Hello World!".getBytes());
-                    assertThat(Files.isSameFile(fileWithAnotherCase, file)).isFalse();
                 }
 
                 @Nested
@@ -545,7 +559,7 @@ abstract class FileSystemTest {
         }
 
         @Nested
-        class NestedDirectoryTests {
+        class MoreNestedDirectoryTests {
             String testDirPath = "/tmp/a/b/c/d/testdir";
             Path dir;
 
