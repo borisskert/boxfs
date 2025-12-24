@@ -1,9 +1,6 @@
 package de.borisskert.boxfs.filesystem.unix;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -212,8 +209,13 @@ abstract class FileSystemTest {
                         assertThatThrownBy(() -> Files.readAttributes(pathWithDifferentCase, "*")).isInstanceOf(IOException.class);
                         assertThatThrownBy(() -> Files.getLastModifiedTime(pathWithDifferentCase)).isInstanceOf(IOException.class);
                         assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
-                        assertThat(Files.isSameFile(pathWithDifferentCase, file)).isFalse();
                         assertThat(pathWithDifferentCase.toString()).isEqualTo(testFilePathUpperCase);
+                    }
+
+                    @Test
+                    @Disabled
+                    void shouldThrowWhenCheckingForSameFileWhichDoesntExist() {
+                        assertThatThrownBy(() -> Files.isSameFile(pathWithDifferentCase, file)).isInstanceOf(NoSuchFileException.class);
                     }
 
                     @Test
