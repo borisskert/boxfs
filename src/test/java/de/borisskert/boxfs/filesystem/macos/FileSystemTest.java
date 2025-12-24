@@ -47,7 +47,7 @@ abstract class FileSystemTest {
             Path root;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 root = fs.getRootDirectories().iterator().next();
             }
 
@@ -70,8 +70,8 @@ abstract class FileSystemTest {
             @Test
             void shouldFindTwoFilesInRootDirectory() throws IOException {
                 try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
-                    Iterator<Path> iterator = paths.iterator();
-                    assertThat(iterator.hasNext()).isFalse();
+                    Set<Path> files = toSet(paths.iterator());
+                    assertThat(files).isEmpty();
                 }
             }
         }
@@ -83,7 +83,7 @@ abstract class FileSystemTest {
             Path file;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 root = fs.getPath("/");
                 file = fs.getPath(testFilePath);
             }
@@ -230,7 +230,7 @@ abstract class FileSystemTest {
                         // ... which isn't possible in MacOS
 
                         @Test
-                        void shouldFailCreatingFileWithDifferentCase() throws IOException {
+                        void shouldFailCreatingFileWithDifferentCase() {
                             assertThatThrownBy(() -> Files.createFile(pathWithDifferentCase))
                                     .isInstanceOf(FileAlreadyExistsException.class);
                         }
@@ -352,7 +352,7 @@ abstract class FileSystemTest {
             Path dir;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 dir = fs.getPath(testDirPath);
             }
 
@@ -541,7 +541,7 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldDeleteDirectory() throws IOException {
+                        void shouldDeleteDirectory() {
                             assertThat(Files.exists(dir)).isFalse();
                         }
 
@@ -560,7 +560,7 @@ abstract class FileSystemTest {
             Path dir;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 dir = fs.getPath(testDirPath);
             }
 
