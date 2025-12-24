@@ -225,12 +225,12 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                void shouldNotBeAbleToGetPosixFilePermissions() throws IOException {
+                void shouldNotBeAbleToGetPosixFilePermissions() {
                     assertThatThrownBy(() -> Files.getPosixFilePermissions(file)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Test
-                void shouldNotBeAbleToSetPosixFilePermissions() throws IOException {
+                void shouldNotBeAbleToSetPosixFilePermissions() {
                     Set<PosixFilePermission> permissions = new HashSet<>(Collections.singletonList(PosixFilePermission.OWNER_READ));
                     assertThatThrownBy(() -> Files.setPosixFilePermissions(file, permissions)).isInstanceOf(UnsupportedOperationException.class);
                 }
@@ -276,12 +276,12 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldNotBeAbleToWriteContent() throws IOException {
+                    void shouldNotBeAbleToWriteContent() {
                         assertThatThrownBy(() -> Files.write(file, "Hello World!".getBytes())).isInstanceOf(AccessDeniedException.class);
                     }
 
                     @Test
-                    void shouldNotBeAbleToDeleteTheFile() throws IOException {
+                    void shouldNotBeAbleToDeleteTheFile() {
                         assertThatThrownBy(() -> Files.delete(file)).isInstanceOf(IOException.class);
                         assertThat(Files.exists(file)).isTrue();
                     }
@@ -335,7 +335,7 @@ abstract class FileSystemTest {
             }
 
             @Test
-            void shouldNotExist() throws Exception {
+            void shouldNotExist() {
                 assertThat(Files.exists(dir)).isFalse();
                 assertThat(Files.isDirectory(dir)).isFalse();
                 assertThat(Files.notExists(dir)).isTrue();
@@ -385,7 +385,7 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldNotExist() throws Exception {
+                    void shouldNotExist() {
                         assertThat(Files.exists(subDir)).isFalse();
                         assertThat(Files.isDirectory(subDir)).isFalse();
                         assertThat(Files.notExists(subDir)).isTrue();
@@ -411,7 +411,7 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldCreateSubDirectory() throws Exception {
+                        void shouldCreateSubDirectory() {
                             assertThat(Files.exists(subDir)).isTrue();
                             assertThat(Files.isDirectory(subDir)).isTrue();
                             assertThat(Files.notExists(subDir)).isFalse();
@@ -490,12 +490,12 @@ abstract class FileSystemTest {
                 }
 
                 @Test
-                void shouldNotBeAbleToGetPosixFilePermissions() throws IOException {
+                void shouldNotBeAbleToGetPosixFilePermissions() {
                     assertThatThrownBy(() -> Files.getPosixFilePermissions(dir)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Test
-                void shouldNotBeAbleToSetPosixFilePermissions() throws IOException {
+                void shouldNotBeAbleToSetPosixFilePermissions() {
                     Set<PosixFilePermission> permissions = new HashSet<>(Collections.singletonList(PosixFilePermission.OWNER_READ));
                     assertThatThrownBy(() -> Files.setPosixFilePermissions(dir, permissions)).isInstanceOf(UnsupportedOperationException.class);
                 }
@@ -573,7 +573,7 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldNotExist() throws IOException {
+                    void shouldNotExist() {
                         assertThat(Files.exists(dir)).isFalse();
                         assertThat(Files.isDirectory(dir)).isFalse();
                         assertThat(Files.notExists(dir)).isTrue();
@@ -593,7 +593,7 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldNotExist() throws IOException {
+                        void shouldNotExist() {
                             assertThat(Files.exists(dir)).isFalse();
                             assertThat(Files.isDirectory(dir)).isFalse();
                             assertThat(Files.notExists(dir)).isTrue();
@@ -649,7 +649,7 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldDeleteDirectory() throws IOException {
+                        void shouldDeleteDirectory() {
                             assertThat(Files.exists(dir)).isFalse();
                         }
 
@@ -673,7 +673,7 @@ abstract class FileSystemTest {
             }
 
             @Test
-            void shouldNotExist() throws Exception {
+            void shouldNotExist() {
                 assertThat(Files.exists(dir)).isFalse();
                 assertThat(Files.isDirectory(dir)).isFalse();
                 assertThat(Files.notExists(dir)).isTrue();
@@ -744,7 +744,7 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldNotExist() throws IOException {
+                    void shouldNotExist() {
                         assertThat(Files.exists(dir)).isFalse();
                         assertThat(Files.isDirectory(dir)).isFalse();
                         assertThat(Files.notExists(dir)).isTrue();
@@ -764,7 +764,7 @@ abstract class FileSystemTest {
                         }
 
                         @Test
-                        void shouldNotExist() throws IOException {
+                        void shouldNotExist() {
                             assertThat(Files.exists(dir)).isFalse();
                             assertThat(Files.isDirectory(dir)).isFalse();
                             assertThat(Files.notExists(dir)).isTrue();
