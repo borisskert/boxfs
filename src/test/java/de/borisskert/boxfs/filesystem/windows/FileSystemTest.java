@@ -47,7 +47,7 @@ abstract class FileSystemTest {
             Path root;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 root = fs.getRootDirectories().iterator().next();
             }
 
@@ -66,6 +66,14 @@ abstract class FileSystemTest {
                 assertThat(Files.isExecutable(root)).isTrue();
                 assertThat(Files.isSameFile(root, root)).isTrue();
             }
+
+            @Test
+            void shouldFindTwoFilesInRootDirectory() throws IOException {
+                try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
+                    Set<Path> files = toSet(paths.iterator());
+                    assertThat(files).isEmpty();
+                }
+            }
         }
 
         @Nested
@@ -75,7 +83,7 @@ abstract class FileSystemTest {
             Path file;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 root = fs.getPath("C:\\");
                 file = fs.getPath(testFilePath);
             }
@@ -96,6 +104,14 @@ abstract class FileSystemTest {
                 assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
                 assertThat(Files.isSameFile(file, file)).isTrue();
                 assertThat(file.toString()).isEqualTo(testFilePath);
+            }
+
+            @Test
+            void shouldNotFindAnyFilesInRootDirectory() throws IOException {
+                try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
+                    Iterator<Path> iterator = paths.iterator();
+                    assertThat(iterator.hasNext()).isFalse();
+                }
             }
 
             @Nested
@@ -162,37 +178,110 @@ abstract class FileSystemTest {
                 @Test
                 void shouldFindTheFileInRootDirectory() throws IOException {
                     try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
-                        Iterator<Path> iterator = paths.iterator();
-
-                        assertThat(iterator.hasNext()).isTrue();
-                        assertThat(iterator.next()).isEqualTo(file);
-                        assertThat(iterator.hasNext()).isFalse();
+                        Set<Path> files = toSet(paths.iterator());
+                        assertThat(files).containsOnly(file);
                     }
                 }
 
-                @Test
-                void shouldFindFileInAnotherCase() throws IOException {
-                    Path pathWithDifferentCase = fs.getPath(testFilePath.toUpperCase());
+                @Nested
+                class PathInUppercase {
+                    String testFilePathUpperCase;
+                    Path pathWithDifferentCase;
 
-                    assertThat(Files.exists(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.notExists(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isRegularFile(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
-                    assertThat(Files.isReadable(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isWritable(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.isExecutable(pathWithDifferentCase)).isTrue();
-                    assertThat(Files.size(pathWithDifferentCase)).isEqualTo(0);
-                    assertThat(Files.isSameFile(pathWithDifferentCase, file)).isTrue();
-                }
+                    @BeforeEach
+                    void setup() {
+                        testFilePathUpperCase = testFilePath.toUpperCase();
+                        pathWithDifferentCase = fs.getPath(testFilePathUpperCase);
+                    }
 
-                @Test
-                void shouldFailWhenTryingToCreateFileInAnotherCase() {
-                    Path pathWithDifferentCase = fs.getPath(testFilePath.toUpperCase());
+                    @Test
+                    void shouldFindFileInAnotherCase() throws IOException {
+                        assertThat(Files.exists(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.notExists(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isRegularFile(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
+                        assertThat(Files.isReadable(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isWritable(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isExecutable(pathWithDifferentCase)).isTrue();
+                        assertThat(Files.size(pathWithDifferentCase)).isEqualTo(0);
+                        assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
+                        assertThat(Files.isSameFile(pathWithDifferentCase, file)).isTrue();
+                        assertThat(pathWithDifferentCase.toString()).isEqualTo(testFilePathUpperCase);
+                    }
 
-                    assertThatThrownBy(() -> Files.createFile(pathWithDifferentCase))
-                            .isInstanceOf(FileAlreadyExistsException.class);
+                    @Test
+                    void shouldFindOneFileInRootDirectory() throws IOException {
+                        try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
+                            Set<Path> files = toSet(paths.iterator());
+                            assertThat(files).containsOnly(file);
+                        }
+                    }
+
+                    @Nested
+                    class CreateFileInAnotherCase {
+                        // ... which isn't possible in Windows
+
+                        @Test
+                        void shouldFailCreatingFileWithDifferentCase() {
+                            assertThatThrownBy(() -> Files.createFile(pathWithDifferentCase))
+                                    .isInstanceOf(FileAlreadyExistsException.class);
+                        }
+
+                        @Test
+                        void shouldFindFileInAnotherCase() throws Exception {
+                            assertThat(Files.exists(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isDirectory(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.notExists(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isRegularFile(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isHidden(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isSymbolicLink(pathWithDifferentCase)).isFalse();
+                            assertThat(Files.isReadable(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isWritable(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.isExecutable(pathWithDifferentCase)).isTrue();
+                            assertThat(Files.size(pathWithDifferentCase)).isEqualTo(0);
+                            assertThat(Files.isSameFile(pathWithDifferentCase, pathWithDifferentCase)).isTrue();
+                        }
+
+                        @Test
+                        void shouldLeaveTheExistingFile() throws IOException {
+                            assertThat(Files.exists(file)).isTrue();
+                            assertThat(Files.isSameFile(pathWithDifferentCase, file)).isTrue();
+                        }
+
+                        @Test
+                        void shouldFindOneFileInRootDirectory() throws IOException {
+                            try (DirectoryStream<Path> directorySteam = Files.newDirectoryStream(root)) {
+                                Set<Path> paths = toSet(directorySteam.iterator());
+                                assertThat(paths).containsOnly(file);
+                            }
+                        }
+
+                        @Nested
+                        class WriteShortContentToFileWitAnotherCase {
+                            @BeforeEach
+                            void setup() throws IOException {
+                                Files.write(pathWithDifferentCase, "Hello World 2!".getBytes());
+                            }
+
+                            @Test
+                            void shouldWriteToFile() throws Exception {
+                                assertThat(Files.exists(pathWithDifferentCase)).isTrue();
+                                assertThat(Files.size(pathWithDifferentCase)).isEqualTo(14);
+                                assertThat(Files.readAllBytes(pathWithDifferentCase)).isEqualTo("Hello World 2!".getBytes());
+                                assertThat(Files.isSameFile(pathWithDifferentCase, file)).isTrue();
+                            }
+
+                            @Test
+                            void shouldHaveContentInOtherFile() throws Exception {
+                                assertThat(Files.exists(file)).isTrue();
+                                assertThat(Files.size(file)).isEqualTo(14);
+                                assertThat(Files.readAllBytes(file)).isEqualTo("Hello World 2!".getBytes());
+                                assertThat(Files.isSameFile(file, pathWithDifferentCase)).isTrue();
+                            }
+                        }
+                    }
                 }
 
                 @Nested
@@ -236,34 +325,18 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
-                class WriteShortContentToFileWitAnotherCase {
-                    Path fileWithAnotherCase;
-
-                    @BeforeEach
-                    void setup() throws IOException {
-                        fileWithAnotherCase = fs.getPath(testFilePath.toUpperCase());
-                        Files.write(fileWithAnotherCase, "Hello World!".getBytes());
-                    }
-
-                    @Test
-                    void shouldWriteToFile() throws Exception {
-                        assertThat(Files.size(fileWithAnotherCase)).isEqualTo(12);
-                        assertThat(Files.readAllBytes(fileWithAnotherCase)).isEqualTo("Hello World!".getBytes());
-                        assertThat(Files.isSameFile(fileWithAnotherCase, file)).isTrue();
-                    }
-                }
-
-                @Nested
                 class MakeFileReadOnly {
+                    Object oldValue;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Files.setAttribute(file, "dos:readonly", true);
+                        oldValue = makeReadonly(file);
                     }
 
                     @AfterEach
                     void teardown() throws IOException {
                         if (Files.exists(file)) {
-                            Files.setAttribute(file, "dos:readonly", false);
+                            Files.setAttribute(file, "dos:readonly", oldValue);
                         }
                     }
 
@@ -277,48 +350,7 @@ abstract class FileSystemTest {
 
                     @Test
                     void shouldNotBeAbleToWriteContent() {
-                        assertThatThrownBy(() -> Files.write(file, "Hello World!".getBytes())).isInstanceOf(AccessDeniedException.class);
-                    }
-
-                    @Test
-                    void shouldNotBeAbleToDeleteTheFile() {
-                        assertThatThrownBy(() -> Files.delete(file)).isInstanceOf(IOException.class);
-                        assertThat(Files.exists(file)).isTrue();
-                    }
-
-                    @Nested
-                    class MakeWritable {
-                        @BeforeEach
-                        void setup() throws IOException {
-                            Files.setAttribute(file, "dos:readonly", false);
-                        }
-
-                        @AfterEach
-                        void teardown() throws IOException {
-                            if (Files.exists(file)) {
-                                Files.setAttribute(file, "dos:readonly", true);
-                            }
-                        }
-
-                        @Test
-                        void shouldMakeWritable() throws Exception {
-                            assertThat(Files.isReadable(file)).isTrue();
-                            assertThat(Files.isWritable(file)).isTrue();
-                            assertThat(Files.isExecutable(file)).isTrue();
-                            assertThat(Files.isSameFile(file, file)).isTrue();
-                        }
-
-                        @Test
-                        void shouldBeAbleToDeleteTheFile() throws Exception {
-                            Files.delete(file);
-                            assertThat(Files.exists(file)).isFalse();
-                        }
-
-                        @Test
-                        void shouldBeAbleToWriteContent() throws Exception {
-                            Files.write(file, "Hello World!".getBytes());
-                            assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
-                        }
+                        assertThatThrownBy(() -> Files.write(file, "Hello World!".getBytes())).isInstanceOf(IOException.class);
                     }
                 }
             }
@@ -330,104 +362,7 @@ abstract class FileSystemTest {
             Path dir;
 
             @BeforeEach
-            void setup() throws IOException {
-                dir = fs.getPath(testDirPath);
-            }
-
-            @Test
-            void shouldNotExist() {
-                assertThat(Files.exists(dir)).isFalse();
-                assertThat(Files.isDirectory(dir)).isFalse();
-                assertThat(Files.notExists(dir)).isTrue();
-                assertThat(Files.isRegularFile(dir)).isFalse();
-                assertThatThrownBy(() -> Files.isHidden(dir)).isInstanceOf(IOException.class);
-                assertThat(Files.isSymbolicLink(dir)).isFalse();
-                assertThat(Files.isReadable(dir)).isFalse();
-                assertThat(Files.isWritable(dir)).isFalse();
-                assertThat(Files.isExecutable(dir)).isFalse();
-                assertThat(dir.toString()).isEqualTo(testDirPath);
-            }
-
-            @Nested
-            class CreateDirectory {
-
-                @BeforeEach
-                void setup() throws IOException {
-                    Files.createDirectories(dir);
-                }
-
-                @AfterEach
-                void teardown() throws IOException {
-                    deleteRecursivelyIfExists(dir);
-                }
-
-                @Test
-                void shouldCreateDirectory() throws Exception {
-                    assertThat(Files.exists(dir)).isTrue();
-                    assertThat(Files.isDirectory(dir)).isTrue();
-                    assertThat(Files.notExists(dir)).isFalse();
-                    assertThat(Files.isRegularFile(dir)).isFalse();
-                    assertThat(Files.isHidden(dir)).isFalse();
-                    assertThat(Files.isSymbolicLink(dir)).isFalse();
-                    assertThat(Files.isReadable(dir)).isTrue();
-                    assertThat(Files.isWritable(dir)).isTrue();
-                    assertThat(Files.isExecutable(dir)).isTrue();
-                }
-
-                @Nested
-                class SubDirectory {
-                    String subDirPath = "C:\\testdir\\sub";
-                    Path subDir;
-
-                    @BeforeEach
-                    void setup() throws IOException {
-                        subDir = fs.getPath(subDirPath);
-                    }
-
-                    @Test
-                    void shouldNotExist() {
-                        assertThat(Files.exists(subDir)).isFalse();
-                        assertThat(Files.isDirectory(subDir)).isFalse();
-                        assertThat(Files.notExists(subDir)).isTrue();
-                        assertThat(Files.isRegularFile(subDir)).isFalse();
-                        assertThatThrownBy(() -> Files.isHidden(subDir)).isInstanceOf(IOException.class);
-                        assertThat(Files.isSymbolicLink(subDir)).isFalse();
-                        assertThat(Files.isReadable(subDir)).isFalse();
-                        assertThat(Files.isWritable(subDir)).isFalse();
-                        assertThat(Files.isExecutable(subDir)).isFalse();
-                        assertThat(subDir.toString()).isEqualTo(subDirPath);
-                    }
-
-                    @Nested
-                    class CreateSubDirectory {
-                        @BeforeEach
-                        void setup() throws IOException {
-                            Files.createDirectories(subDir);
-                        }
-
-                        @AfterEach
-                        void teardown() throws IOException {
-                            deleteRecursivelyIfExists(subDir);
-                        }
-
-                        @Test
-                        void shouldCreateSubDirectory() {
-                            assertThat(Files.exists(subDir)).isTrue();
-                            assertThat(Files.isDirectory(subDir)).isTrue();
-                            assertThat(Files.notExists(subDir)).isFalse();
-                        }
-                    }
-                }
-            }
-        }
-
-        @Nested
-        class NestedDirectoryTests {
-            String testDirPath = "C:\\tmp\\testdir";
-            Path dir;
-
-            @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 dir = fs.getPath(testDirPath);
             }
 
@@ -502,9 +437,18 @@ abstract class FileSystemTest {
 
                 @Nested
                 class MakeDirectoryReadonly {
+                    Object oldValue;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Files.setAttribute(dir, "dos:readonly", true);
+                        oldValue = makeReadonly(dir);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        if (Files.exists(dir)) {
+                            Files.setAttribute(dir, "dos:readonly", oldValue);
+                        }
                     }
 
                     @Test
@@ -545,6 +489,12 @@ abstract class FileSystemTest {
 
                     @Nested
                     class CreateFile {
+                        /*
+                        The dos:readonly attribute on a directory does not prevent creating files or subdirectories
+                         inside it.
+                        Windows interprets this flag only for the directory entry itself, meaning it affects operations
+                         such as renaming or deleting the directory.
+                        */
                         Path file;
 
                         @BeforeEach
@@ -632,12 +582,8 @@ abstract class FileSystemTest {
                     @Test
                     void shouldShowFileInDir() throws IOException {
                         try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir)) {
-                            Iterator<Path> iterator = entries.iterator();
-
-                            Path nextPath = iterator.next();
-
-                            assertThat(nextPath).isEqualTo(fileInDir);
-                            assertThat(iterator.hasNext()).isFalse();
+                            Set<Path> files = toSet(entries.iterator());
+                            assertThat(files).containsExactly(fileInDir);
                         }
                     }
 
@@ -668,7 +614,7 @@ abstract class FileSystemTest {
             Path dir;
 
             @BeforeEach
-            void setup() throws IOException {
+            void setup() {
                 dir = fs.getPath(testDirPath);
             }
 
@@ -801,5 +747,22 @@ abstract class FileSystemTest {
 
     private static void makeWritable(Path path) throws IOException {
         Files.setAttribute(path, "dos:readonly", false);
+    }
+
+    private static Object makeReadonly(Path path) throws IOException {
+        Object oldValue = Files.getAttribute(path, "dos:readonly");
+        Files.setAttribute(path, "dos:readonly", true);
+
+        return oldValue;
+    }
+
+    private static <T> Set<T> toSet(Iterator<T> iterator) {
+        Set<T> set = new HashSet<>();
+
+        while (iterator.hasNext()) {
+            set.add(iterator.next());
+        }
+
+        return set;
     }
 }

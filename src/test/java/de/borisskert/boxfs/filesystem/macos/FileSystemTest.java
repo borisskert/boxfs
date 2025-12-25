@@ -1,9 +1,6 @@
 package de.borisskert.boxfs.filesystem.macos;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -109,8 +106,8 @@ abstract class FileSystemTest {
             @Test
             void shouldNotFindAnyFilesInRootDirectory() throws IOException {
                 try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
-                    Iterator<Path> iterator = paths.iterator();
-                    assertThat(iterator.hasNext()).isFalse();
+                    Set<Path> files = toSet(paths.iterator());
+                    assertThat(files).isEmpty();
                 }
             }
 
@@ -178,11 +175,8 @@ abstract class FileSystemTest {
                 @Test
                 void shouldFindTheFileInRootDirectory() throws IOException {
                     try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
-                        Iterator<Path> iterator = paths.iterator();
-
-                        assertThat(iterator.hasNext()).isTrue();
-                        assertThat(iterator.next()).isEqualTo(file);
-                        assertThat(iterator.hasNext()).isFalse();
+                        Set<Path> files = toSet(paths.iterator());
+                        assertThat(files).containsOnly(file);
                     }
                 }
 
@@ -217,11 +211,8 @@ abstract class FileSystemTest {
                     @Test
                     void shouldFindOneFileInRootDirectory() throws IOException {
                         try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
-                            Iterator<Path> iterator = paths.iterator();
-
-                            assertThat(iterator.hasNext()).isTrue();
-                            assertThat(iterator.next()).isEqualTo(file);
-                            assertThat(iterator.hasNext()).isFalse();
+                            Set<Path> files = toSet(paths.iterator());
+                            assertThat(files).containsOnly(file);
                         }
                     }
 
@@ -319,15 +310,32 @@ abstract class FileSystemTest {
                     }
                 }
 
+                @Test
+                @Disabled
+                void shouldNotBeAbleToGetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.getAttribute(file, "dos:readonly")).isInstanceOf(UnsupportedOperationException.class);
+                }
+
+                @Test
+                @Disabled
+                void shouldNotBeAbleToSetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.setAttribute(file, "dos:readonly", true)).isInstanceOf(UnsupportedOperationException.class);
+                }
+
                 @Nested
                 class MakeFileReadOnly {
+                    Set<PosixFilePermission> oldPermissions;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
-                        permissions.remove(PosixFilePermission.OWNER_WRITE);
-                        permissions.remove(PosixFilePermission.GROUP_WRITE);
-                        permissions.remove(PosixFilePermission.OTHERS_WRITE);
-                        Files.setPosixFilePermissions(file, permissions);
+                        oldPermissions = makeReadonly(file);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        if (Files.exists(file)) {
+                            Files.setPosixFilePermissions(file, oldPermissions);
+                        }
                     }
 
                     @Test
@@ -414,15 +422,32 @@ abstract class FileSystemTest {
                             .isInstanceOf(FileAlreadyExistsException.class);
                 }
 
+                @Test
+                @Disabled
+                void shouldNotBeAbleToGetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.getAttribute(dir, "dos:readonly")).isInstanceOf(UnsupportedOperationException.class);
+                }
+
+                @Test
+                @Disabled
+                void shouldNotBeAbleToSetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.setAttribute(dir, "dos:readonly", true)).isInstanceOf(UnsupportedOperationException.class);
+                }
+
                 @Nested
                 class MakeDirectoryReadonly {
+                    Set<PosixFilePermission> oldPermissions;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(dir);
-                        permissions.remove(PosixFilePermission.OWNER_WRITE);
-                        permissions.remove(PosixFilePermission.GROUP_WRITE);
-                        permissions.remove(PosixFilePermission.OTHERS_WRITE);
-                        Files.setPosixFilePermissions(dir, permissions);
+                        oldPermissions = makeReadonly(dir);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        if (Files.exists(dir)) {
+                            Files.setPosixFilePermissions(dir, oldPermissions);
+                        }
                     }
 
                     @Test
@@ -442,18 +467,46 @@ abstract class FileSystemTest {
                         );
                     }
 
-                    @Test
-                    void shouldFailingCreateFile() {
-                        assertThatThrownBy(
-                                () -> Files.createFile(dir.resolve("testfile.txt"))
-                        ).isInstanceOf(IOException.class);
+                    @Nested
+                    class MakeDirectory {
+                        Path subdir;
+
+                        @BeforeEach
+                        void setup() {
+                            subdir = dir.resolve("testdir");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(subdir);
+                        }
+
+                        @Test
+                        void shouldFailingCreateSubdirectory() {
+                            assertThatThrownBy(() -> Files.createDirectory(subdir)).isInstanceOf(IOException.class);
+                            assertThat(Files.exists(subdir)).isFalse();
+                        }
                     }
 
-                    @Test
-                    void shouldFailCreatingSubdirectory() {
-                        assertThatThrownBy(
-                                () -> Files.createDirectories(dir.resolve("testdir"))
-                        ).isInstanceOf(IOException.class);
+                    @Nested
+                    class CreateFile {
+                        Path file;
+
+                        @BeforeEach
+                        void setup() {
+                            file = dir.resolve("testfile.txt");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(file);
+                        }
+
+                        @Test
+                        void shouldFailingCreateFile() {
+                            assertThatThrownBy(() -> Files.createFile(file)).isInstanceOf(IOException.class);
+                            assertThat(Files.exists(file)).isFalse();
+                        }
                     }
                 }
 
@@ -524,12 +577,8 @@ abstract class FileSystemTest {
                     @Test
                     void shouldShowFileInDir() throws IOException {
                         try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir)) {
-                            Iterator<Path> iterator = entries.iterator();
-
-                            Path nextPath = iterator.next();
-
-                            assertThat(nextPath).isEqualTo(fileInDir);
-                            assertThat(iterator.hasNext()).isFalse();
+                            Set<Path> files = toSet(entries.iterator());
+                            assertThat(files).containsExactly(fileInDir);
                         }
                     }
 
@@ -688,12 +737,7 @@ abstract class FileSystemTest {
         }
 
         Path parent = path.getParent();
-        Set<PosixFilePermission> parentPermissions = Files.getPosixFilePermissions(parent);
-        Set<PosixFilePermission> newParentPermissions = new HashSet<>(parentPermissions);
-        newParentPermissions.add(PosixFilePermission.OWNER_WRITE);
-        newParentPermissions.add(PosixFilePermission.GROUP_WRITE);
-        newParentPermissions.add(PosixFilePermission.OTHERS_WRITE);
-        Files.setPosixFilePermissions(parent, newParentPermissions);
+        Set<PosixFilePermission> parentPermissions = makeWritable(parent);
 
         makeWritable(path);
         Files.delete(path);
@@ -701,12 +745,28 @@ abstract class FileSystemTest {
         Files.setPosixFilePermissions(parent, parentPermissions);
     }
 
-    private static void makeWritable(Path path) throws IOException {
-        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(path);
-        permissions.add(PosixFilePermission.OWNER_WRITE);
-        permissions.add(PosixFilePermission.GROUP_WRITE);
-        permissions.add(PosixFilePermission.OTHERS_WRITE);
-        Files.setPosixFilePermissions(path, permissions);
+    private static Set<PosixFilePermission> makeWritable(Path path) throws IOException {
+        Set<PosixFilePermission> oldPermissions = Files.getPosixFilePermissions(path);
+        Set<PosixFilePermission> newPermissions = new HashSet<>(oldPermissions);
+
+        newPermissions.add(PosixFilePermission.OWNER_WRITE);
+        newPermissions.add(PosixFilePermission.GROUP_WRITE);
+        newPermissions.add(PosixFilePermission.OTHERS_WRITE);
+        Files.setPosixFilePermissions(path, newPermissions);
+
+        return oldPermissions;
+    }
+
+    private static Set<PosixFilePermission> makeReadonly(Path path) throws IOException {
+        Set<PosixFilePermission> oldPermissions = Files.getPosixFilePermissions(path);
+        Set<PosixFilePermission> newPermissions = new HashSet<>(oldPermissions);
+
+        newPermissions.remove(PosixFilePermission.OWNER_WRITE);
+        newPermissions.remove(PosixFilePermission.GROUP_WRITE);
+        newPermissions.remove(PosixFilePermission.OTHERS_WRITE);
+        Files.setPosixFilePermissions(path, newPermissions);
+
+        return oldPermissions;
     }
 
     private static <T> Set<T> toSet(Iterator<T> iterator) {
