@@ -2,6 +2,7 @@ package de.borisskert.boxfs.macos;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
@@ -30,52 +31,57 @@ class BoxFsDirectory implements BoxFsNode {
     }
 
     @Override
-    public void createDirectory(Path path) {
-        String name = path.getName(0).toString();
+    public void createDirectory(Path path) throws IOException {
+        BoxFsFileName childName = BoxFsFileName.of(path.getName(0).toString());
 
-        children.putIfAbsent(
-                BoxFsFileName.of(name),
-                new BoxFsDirectory(fileSystem, this, name)
-        );
+        if (path.getNameCount() == 1) {
+            if (children.containsKey(childName)) {
+                throw new FileAlreadyExistsException(path.toString());
+            }
 
-        if (path.getNameCount() > 1) {
-            children.get(
-                            BoxFsFileName.of(name)
-                    )
-                    .createDirectory(
-                            path.subpath(1, path.getNameCount())
-                    );
+            children.put(
+                    childName,
+                    new BoxFsDirectory(fileSystem, this, childName.name())
+            );
+        } else {
+            BoxFsNode nextDirectory = children.computeIfAbsent(
+                    childName,
+                    name -> new BoxFsDirectory(fileSystem, this, name.name())
+            );
+
+            nextDirectory.createDirectory(path.subpath(1, path.getNameCount()));
         }
     }
 
     @Override
-    public void createFile(Path path) {
+    public void createFile(Path path) throws IOException {
         if (path.getNameCount() < 1) {
             return;
         }
 
-        String name = path.getName(0).toString();
+        BoxFsFileName childName = BoxFsFileName.of(path.getName(0).toString());
 
         if (path.getNameCount() == 1) {
-            children.putIfAbsent(
-                    BoxFsFileName.of(name),
-                    new BoxFsFile(fileSystem, this, name)
+            if (children.containsKey(childName)) {
+                throw new FileAlreadyExistsException(path.toString());
+            }
+
+            children.put(
+                    childName,
+                    new BoxFsFile(fileSystem, this, childName.name())
             );
         } else {
-            children.putIfAbsent(
-                    BoxFsFileName.of(name),
-                    new BoxFsDirectory(fileSystem, this, name)
+            BoxFsNode nextDirectory = children.computeIfAbsent(
+                    childName,
+                    name -> new BoxFsDirectory(fileSystem, this, name.name())
             );
 
-            children.get(BoxFsFileName.of(name))
-                    .createFile(
-                            path.subpath(1, path.getNameCount())
-                    );
+            nextDirectory.createFile(path.subpath(1, path.getNameCount()));
         }
     }
 
     @Override
-    public void delete(Path path) {
+    public void delete(Path path) throws IOException {
         if (path.getNameCount() < 1) {
             return;
         }

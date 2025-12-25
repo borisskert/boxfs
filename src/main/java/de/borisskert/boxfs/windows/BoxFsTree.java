@@ -25,7 +25,7 @@ class BoxFsTree implements BoxFsNode {
     }
 
     @Override
-    public void createDirectory(Path path) {
+    public void createDirectory(Path path) throws IOException {
         if (!path.isAbsolute()) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
@@ -36,15 +36,15 @@ class BoxFsTree implements BoxFsNode {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
-        foundDrive.ifPresent(
-                drive -> drive.createDirectory(
-                        path.subpath(0, path.getNameCount())
-                )
-        );
+        if (foundDrive.isPresent()) {
+            foundDrive.get().createDirectory(
+                    path.subpath(0, path.getNameCount())
+            );
+        }
     }
 
     @Override
-    public void createFile(Path path) {
+    public void createFile(Path path) throws IOException {
         if (!path.isAbsolute()) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
@@ -55,15 +55,15 @@ class BoxFsTree implements BoxFsNode {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
-        foundDrive.ifPresent(
-                drive -> drive.createFile(
-                        path.subpath(0, path.getNameCount())
-                )
-        );
+        if (foundDrive.isPresent()) {
+            foundDrive.get().createFile(
+                    path.subpath(0, path.getNameCount())
+            );
+        }
     }
 
     @Override
-    public void delete(Path path) {
+    public void delete(Path path) throws IOException {
         if (!path.isAbsolute()) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
@@ -74,11 +74,11 @@ class BoxFsTree implements BoxFsNode {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
-        foundDrive.ifPresent(
-                drive -> drive.delete(
-                        path.subpath(0, path.getNameCount())
-                )
-        );
+        if (foundDrive.isPresent()) {
+            foundDrive.get().delete(
+                    path.subpath(0, path.getNameCount())
+            );
+        }
     }
 
     @Override
