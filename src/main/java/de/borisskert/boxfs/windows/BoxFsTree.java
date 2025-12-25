@@ -2,6 +2,7 @@ package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
@@ -59,6 +60,8 @@ class BoxFsTree implements BoxFsNode {
             foundDrive.get().createFile(
                     path.subpath(0, path.getNameCount())
             );
+        } else {
+            throw new NoSuchFileException(path.toString());
         }
     }
 
@@ -140,7 +143,17 @@ class BoxFsTree implements BoxFsNode {
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (!path.isAbsolute()) {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        Optional<BoxFsNode> foundDrive = findDrive(path);
+
+        if (path.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be a drive root");
+        }
+
+        foundDrive.ifPresent(drive -> drive.writeContent(path.subpath(0, path.getNameCount()), buffer));
     }
 
     @Override

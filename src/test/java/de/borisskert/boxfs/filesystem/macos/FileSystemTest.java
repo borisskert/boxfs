@@ -310,6 +310,33 @@ abstract class FileSystemTest {
                     }
                 }
 
+                @Nested
+                class CopyFileToAbsoluteTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("/target.txt");
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.deleteIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyFile() throws IOException {
+                        Files.copy(file, target);
+
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                    }
+                }
+
                 @Test
                 @Disabled
                 void shouldNotBeAbleToGetDosFilePermissions() {

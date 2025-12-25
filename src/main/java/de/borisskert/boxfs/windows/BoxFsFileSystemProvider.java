@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
@@ -75,7 +76,12 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        byte[] content = fileTree.readNode(source)
+                .orElseThrow(() -> new IllegalStateException("Not yet implemented"))
+                .content();
+
+        fileTree.createFile(target);
+        fileTree.writeContent(target, ByteBuffer.wrap(content));
     }
 
     @Override

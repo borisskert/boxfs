@@ -170,7 +170,22 @@ class BoxFsDrive implements BoxFsNode {
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (path.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be empty");
+        }
+
+        String name = path.getName(0).toString();
+
+        if (path.getNameCount() == 1) {
+            children.get(BoxFsFileName.of(name)).writeContent(null, buffer);
+        } else {
+            children.get(
+                    BoxFsFileName.of(name)
+            ).writeContent(
+                    path.subpath(1, path.getNameCount()),
+                    buffer
+            );
+        }
     }
 
     @Override
