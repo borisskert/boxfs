@@ -122,7 +122,8 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public boolean isDirectory(Path path) {
-        return readNode(path).isDirectory();
+        return readNode(path).map(BoxFsNode::isDirectory)
+                .orElse(false);
     }
 
     @Override
@@ -132,11 +133,31 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public boolean isFile(Path path) {
-        return readNode(path).isFile();
+        return readNode(path).map(BoxFsNode::isFile)
+                .orElse(false);
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
+    public Optional<BoxFsNode> readNode(Path path) {
+        if (path.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be empty");
+        }
+
+        String name = path.getName(0).toString();
+
+        BoxFsNode child = children.get(BoxFsFileName.of(name));
+
+        if (path.getNameCount() == 1) {
+            return Optional.ofNullable(child);
+        }
+
+        return child.readNode(
+                path.subpath(1, path.getNameCount())
+        );
+    }
+
+    @Override
+    public void writeContent(Path path, ByteBuffer buffer) {
         if (path.getNameCount() < 1) {
             throw new IllegalArgumentException("Path must not be empty");
         }
@@ -144,19 +165,15 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return children.get(BoxFsFileName.of(name));
+            children.get(BoxFsFileName.of(name)).writeContent(null, buffer);
+        } else {
+            children.get(
+                    BoxFsFileName.of(name)
+            ).writeContent(
+                    path.subpath(1, path.getNameCount()),
+                    buffer
+            );
         }
-
-        return children.get(
-                BoxFsFileName.of(name)
-        ).readNode(
-                path.subpath(1, path.getNameCount())
-        );
-    }
-
-    @Override
-    public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Cannot write content to a directory");
     }
 
     @Override

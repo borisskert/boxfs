@@ -2,6 +2,7 @@ package de.borisskert.boxfs.windows;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttributeView;
@@ -45,53 +46,49 @@ class BoxFsTree implements BoxFsNode {
 
     @Override
     public void createFile(Path path) throws IOException {
-        if (!path.isAbsolute()) {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(path);
+        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
 
-        if (path.getNameCount() < 1) {
+        if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
         if (foundDrive.isPresent()) {
             foundDrive.get().createFile(
-                    path.subpath(0, path.getNameCount())
+                    absolutePath.subpath(0, absolutePath.getNameCount())
             );
+        } else {
+            throw new NoSuchFileException(absolutePath.toString());
         }
     }
 
     @Override
     public void delete(Path path) throws IOException {
-        if (!path.isAbsolute()) {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(path);
+        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
 
-        if (path.getNameCount() < 1) {
+        if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
         if (foundDrive.isPresent()) {
             foundDrive.get().delete(
-                    path.subpath(0, path.getNameCount())
+                    absolutePath.subpath(0, absolutePath.getNameCount())
             );
         }
     }
 
     @Override
     public boolean exists(Path path) {
-        if (!path.isAbsolute()) {
-            return false;
-        }
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        String absolutePath = path.toString();
+        String pathString = absolutePath.toString();
 
-        char driveLetter = parseDriveLetter(absolutePath);
+        char driveLetter = parseDriveLetter(pathString);
 
-        if (path.getNameCount() < 1) {
+        if (absolutePath.getNameCount() < 1) {
             return drives.containsKey(driveLetter);
         }
 
@@ -99,7 +96,7 @@ class BoxFsTree implements BoxFsNode {
             return false;
         }
 
-        return drives.get(driveLetter).exists(path.subpath(0, path.getNameCount()));
+        return drives.get(driveLetter).exists(absolutePath.subpath(0, absolutePath.getNameCount()));
     }
 
     @Override
@@ -124,23 +121,29 @@ class BoxFsTree implements BoxFsNode {
 
     @Override
     public Optional<BoxFsNode> readNode(Path path) {
-        if (!path.isAbsolute()) {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(path);
+        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
 
-        if (path.getNameCount() < 1) {
+        if (absolutePath.getNameCount() < 1) {
             return foundDrive;
         }
 
         return foundDrive
-                .flatMap(drive -> drive.readNode(path.subpath(0, path.getNameCount())));
+                .flatMap(drive -> drive.readNode(absolutePath.subpath(0, absolutePath.getNameCount())));
     }
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
+
+        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+
+        if (absolutePath.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be a drive root");
+        }
+
+        foundDrive.ifPresent(drive -> drive.writeContent(absolutePath.subpath(0, absolutePath.getNameCount()), buffer));
     }
 
     @Override

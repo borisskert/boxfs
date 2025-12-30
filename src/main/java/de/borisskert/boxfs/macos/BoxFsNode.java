@@ -29,7 +29,7 @@ interface BoxFsNode {
 
     boolean isFile(Path path);
 
-    BoxFsNode readNode(Path path);
+    Optional<BoxFsNode> readNode(Path path);
 
     void writeContent(Path path, ByteBuffer buffer);
 

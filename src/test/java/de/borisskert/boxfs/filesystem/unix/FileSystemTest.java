@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -125,6 +126,12 @@ abstract class FileSystemTest {
                     assertThat(Files.exists(file)).isTrue();
                     assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                 }
+            }
+
+            @Test
+            void shouldFailWhenTryingToCopyNonExistingFile() {
+                assertThatThrownBy(() -> Files.copy(file, fs.getPath("target.txt")))
+                        .isInstanceOf(NoSuchFileException.class);
             }
 
             @Nested
@@ -317,17 +324,126 @@ abstract class FileSystemTest {
                         Files.write(largeFile, largeContent);
                         assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                     }
+
+                    @Test
+                    void shouldNotDoAnythingWhenCopyFileToSameTarget() throws IOException {
+                        Files.copy(file, file);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThat(Files.size(file)).isEqualTo(12L);
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
+                }
+
+                @Nested
+                class CopyFileToAbsoluteSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("/target.txt");
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.deleteIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyFile() throws IOException {
+                        Files.copy(file, target);
+
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                    }
+                }
+
+                @Nested
+                class CopyFileToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("target.txt");
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.deleteIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyFile() throws IOException {
+                        Files.copy(file, target);
+
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                    }
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyEmptyFileToSameTarget() throws IOException {
+                    Files.copy(file, file);
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.size(file)).isEqualTo(0L);
+                    assertThat(Files.isDirectory(file)).isFalse();
+                    assertThat(Files.notExists(file)).isFalse();
+                    assertThat(Files.isRegularFile(file)).isTrue();
+                    assertThat(Files.isHidden(file)).isFalse();
+                    assertThat(Files.isSymbolicLink(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isTrue();
+                    assertThat(Files.isWritable(file)).isTrue();
+                    assertThat(Files.isExecutable(file)).isFalse();
+                    assertThat(Files.size(file)).isEqualTo(0L);
+                    assertThat(Files.isSameFile(file, file)).isTrue();
+                    assertThat(file.toString()).isEqualTo(testFilePath);
+                }
+
+                @Test
+                @Disabled
+                void shouldNotBeAbleToGetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.getAttribute(file, "dos:readonly")).isInstanceOf(UnsupportedOperationException.class);
+                }
+
+                @Test
+                @Disabled
+                void shouldNotBeAbleToSetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.setAttribute(file, "dos:readonly", true)).isInstanceOf(UnsupportedOperationException.class);
                 }
 
                 @Nested
                 class MakeFileReadOnly {
+                    Set<PosixFilePermission> oldPermissions;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
-                        permissions.remove(PosixFilePermission.OWNER_WRITE);
-                        permissions.remove(PosixFilePermission.GROUP_WRITE);
-                        permissions.remove(PosixFilePermission.OTHERS_WRITE);
-                        Files.setPosixFilePermissions(file, permissions);
+                        oldPermissions = makeReadonly(file);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        if (Files.exists(file)) {
+                            Files.setPosixFilePermissions(file, oldPermissions);
+                        }
                     }
 
                     @Test
@@ -341,6 +457,112 @@ abstract class FileSystemTest {
                     @Test
                     void shouldNotBeAbleToWriteContent() {
                         assertThatThrownBy(() -> Files.write(file, "Hello World!".getBytes())).isInstanceOf(IOException.class);
+                    }
+                }
+
+                @Nested
+                class CreateSecondFile {
+                    String secondFilePath = "/secondfile.txt";
+                    Path secondFile;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        secondFile = fs.getPath(secondFilePath);
+                        Files.createFile(secondFile);
+                        Files.write(secondFile, "Hello World! (2)".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(secondFile);
+                    }
+
+                    @Test
+                    void shouldHaveWrittenSecondFile() throws IOException {
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.notExists(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
+                        assertThat(Files.isHidden(secondFile)).isFalse();
+                        assertThat(Files.isSymbolicLink(secondFile)).isFalse();
+                        assertThat(Files.isReadable(secondFile)).isTrue();
+                        assertThat(Files.isWritable(secondFile)).isTrue();
+                        assertThat(Files.isExecutable(secondFile)).isFalse();
+                        assertThat(Files.size(secondFile)).isEqualTo(16L);
+                        assertThat(Files.readAllBytes(secondFile)).isEqualTo("Hello World! (2)".getBytes());
+                        assertThat(Files.isSameFile(secondFile, file)).isFalse();
+                        assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
+                        assertThat(secondFile.toString()).isEqualTo(secondFilePath);
+                    }
+
+                    @Test
+                    void shouldLeaveFirstFileUntouched() throws IOException {
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThat(Files.size(file)).isEqualTo(0L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo(new byte[0]);
+                        assertThat(Files.isSameFile(file, secondFile)).isFalse();
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopySecondFileToOtherWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(secondFile, file))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldCopySecondFileToOtherWithReplace() throws IOException {
+                        Files.copy(secondFile, file, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThat(Files.size(file)).isEqualTo(16L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World! (2)".getBytes());
+                        assertThat(Files.isSameFile(file, secondFile)).isFalse();
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopyOtherFileToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(file, secondFile))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldCopyOtherFileToSecondWithReplace() throws IOException {
+                        Files.copy(file, secondFile, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.notExists(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
+                        assertThat(Files.isHidden(secondFile)).isFalse();
+                        assertThat(Files.isSymbolicLink(secondFile)).isFalse();
+                        assertThat(Files.isReadable(secondFile)).isTrue();
+                        assertThat(Files.isWritable(secondFile)).isTrue();
+                        assertThat(Files.isExecutable(secondFile)).isFalse();
+                        assertThat(Files.size(secondFile)).isEqualTo(0L);
+                        assertThat(Files.readAllBytes(secondFile)).isEqualTo(new byte[0]);
+                        assertThat(Files.isSameFile(secondFile, file)).isFalse();
+                        assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
+                        assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
                 }
             }
@@ -414,15 +636,32 @@ abstract class FileSystemTest {
                             .isInstanceOf(FileAlreadyExistsException.class);
                 }
 
+                @Test
+                @Disabled
+                void shouldNotBeAbleToGetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.getAttribute(dir, "dos:readonly")).isInstanceOf(UnsupportedOperationException.class);
+                }
+
+                @Test
+                @Disabled
+                void shouldNotBeAbleToSetDosFilePermissions() {
+                    assertThatThrownBy(() -> Files.setAttribute(dir, "dos:readonly", true)).isInstanceOf(UnsupportedOperationException.class);
+                }
+
                 @Nested
                 class MakeDirectoryReadonly {
+                    Set<PosixFilePermission> oldPermissions;
+
                     @BeforeEach
                     void setup() throws IOException {
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(dir);
-                        permissions.remove(PosixFilePermission.OWNER_WRITE);
-                        permissions.remove(PosixFilePermission.GROUP_WRITE);
-                        permissions.remove(PosixFilePermission.OTHERS_WRITE);
-                        Files.setPosixFilePermissions(dir, permissions);
+                        oldPermissions = makeReadonly(dir);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        if (Files.exists(dir)) {
+                            Files.setPosixFilePermissions(dir, oldPermissions);
+                        }
                     }
 
                     @Test
@@ -442,18 +681,46 @@ abstract class FileSystemTest {
                         );
                     }
 
-                    @Test
-                    void shouldFailingCreateFile() {
-                        assertThatThrownBy(
-                                () -> Files.createFile(dir.resolve("testfile.txt"))
-                        ).isInstanceOf(IOException.class);
+                    @Nested
+                    class MakeDirectory {
+                        Path subdir;
+
+                        @BeforeEach
+                        void setup() {
+                            subdir = dir.resolve("testdir");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(subdir);
+                        }
+
+                        @Test
+                        void shouldFailingCreateSubdirectory() {
+                            assertThatThrownBy(() -> Files.createDirectory(subdir)).isInstanceOf(IOException.class);
+                            assertThat(Files.exists(subdir)).isFalse();
+                        }
                     }
 
-                    @Test
-                    void shouldFailCreatingSubdirectory() {
-                        assertThatThrownBy(
-                                () -> Files.createDirectories(dir.resolve("testdir"))
-                        ).isInstanceOf(IOException.class);
+                    @Nested
+                    class CreateFile {
+                        Path file;
+
+                        @BeforeEach
+                        void setup() {
+                            file = dir.resolve("testfile.txt");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(file);
+                        }
+
+                        @Test
+                        void shouldFailingCreateFile() {
+                            assertThatThrownBy(() -> Files.createFile(file)).isInstanceOf(IOException.class);
+                            assertThat(Files.exists(file)).isFalse();
+                        }
                     }
                 }
 
@@ -525,7 +792,7 @@ abstract class FileSystemTest {
                     void shouldShowFileInDir() throws IOException {
                         try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir)) {
                             Set<Path> files = toSet(entries.iterator());
-                            assertThat(files).containsOnly(fileInDir);
+                            assertThat(files).containsExactly(fileInDir);
                         }
                     }
 
@@ -684,12 +951,7 @@ abstract class FileSystemTest {
         }
 
         Path parent = path.getParent();
-        Set<PosixFilePermission> parentPermissions = Files.getPosixFilePermissions(parent);
-        Set<PosixFilePermission> newParentPermissions = new HashSet<>(parentPermissions);
-        newParentPermissions.add(PosixFilePermission.OWNER_WRITE);
-        newParentPermissions.add(PosixFilePermission.GROUP_WRITE);
-        newParentPermissions.add(PosixFilePermission.OTHERS_WRITE);
-        Files.setPosixFilePermissions(parent, newParentPermissions);
+        Set<PosixFilePermission> parentPermissions = makeWritable(parent);
 
         makeWritable(path);
         Files.delete(path);
@@ -697,12 +959,28 @@ abstract class FileSystemTest {
         Files.setPosixFilePermissions(parent, parentPermissions);
     }
 
-    private static void makeWritable(Path path) throws IOException {
-        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(path);
-        permissions.add(PosixFilePermission.OWNER_WRITE);
-        permissions.add(PosixFilePermission.GROUP_WRITE);
-        permissions.add(PosixFilePermission.OTHERS_WRITE);
-        Files.setPosixFilePermissions(path, permissions);
+    private static Set<PosixFilePermission> makeWritable(Path path) throws IOException {
+        Set<PosixFilePermission> oldPermissions = Files.getPosixFilePermissions(path);
+        Set<PosixFilePermission> newPermissions = new HashSet<>(oldPermissions);
+
+        newPermissions.add(PosixFilePermission.OWNER_WRITE);
+        newPermissions.add(PosixFilePermission.GROUP_WRITE);
+        newPermissions.add(PosixFilePermission.OTHERS_WRITE);
+        Files.setPosixFilePermissions(path, newPermissions);
+
+        return oldPermissions;
+    }
+
+    private static Set<PosixFilePermission> makeReadonly(Path path) throws IOException {
+        Set<PosixFilePermission> oldPermissions = Files.getPosixFilePermissions(path);
+        Set<PosixFilePermission> newPermissions = new HashSet<>(oldPermissions);
+
+        newPermissions.remove(PosixFilePermission.OWNER_WRITE);
+        newPermissions.remove(PosixFilePermission.GROUP_WRITE);
+        newPermissions.remove(PosixFilePermission.OTHERS_WRITE);
+        Files.setPosixFilePermissions(path, newPermissions);
+
+        return oldPermissions;
     }
 
     private static <T> Set<T> toSet(Iterator<T> iterator) {

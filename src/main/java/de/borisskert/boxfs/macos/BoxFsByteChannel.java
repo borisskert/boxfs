@@ -24,7 +24,9 @@ class BoxFsByteChannel implements SeekableByteChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
 
-        BoxFsNode file = tree.readNode(path);
+        BoxFsNode file = tree.readNode(path)
+                .orElseThrow(() -> new IllegalStateException("Not implemented yet"));
+
         byte[] content = file.content();
         int size = (int) file.attributes().size();
 
@@ -44,8 +46,11 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        int bytes = src.remaining();  // entscheidend!
-        tree.readNode(path).writeContent(path, src);
+        int bytes = src.remaining();
+
+        tree.readNode(path)
+                .ifPresent(file -> file.writeContent(path, src));
+
         return bytes;
     }
 
@@ -61,7 +66,10 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public long size() throws IOException {
-        return tree.readNode(path).attributes().size();
+        return tree.readNode(path).map(BoxFsNode::attributes)
+                .map(BoxFsFileAttributes.class::cast)
+                .map(BoxFsFileAttributes::size)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
     }
 
     @Override

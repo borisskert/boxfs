@@ -3,6 +3,7 @@ package de.borisskert.boxfs.macos;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
@@ -11,10 +12,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
     private final BoxFsNode fileTree;
@@ -79,7 +77,29 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (isSameFile(source, target)) {
+            return;
+        }
+
+        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+        if (fileTree.exists(target)) {
+            if (replaceExisting) {
+                fileTree.delete(target);
+            }
+        }
+
+        Optional<BoxFsNode> node = fileTree.readNode(source);
+        byte[] content;
+
+        if (node.isPresent()) {
+            content = node.get().content();
+        } else {
+            throw new NoSuchFileException(source.toString());
+        }
+
+        fileTree.createFile(target);
+        fileTree.writeContent(target, ByteBuffer.wrap(content));
     }
 
     @Override
@@ -108,7 +128,9 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        BoxFsNode boxFsNode = fileTree.readNode(path);
+        BoxFsNode boxFsNode = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+
         BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
 
         if (!isAllowed(view.readAttributes().permissions(), modes)) {
@@ -118,14 +140,17 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        BoxFsNode entry = fileTree.readNode(path);
+        BoxFsNode entry = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         return entry.fileAttributeView();
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
         if (fileTree.exists(path)) {
-            return fileTree.readNode(path).attributes();
+            return fileTree.readNode(path).map(BoxFsNode::attributes)
+                    .map(a -> (A) a)
+                    .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         } else {
             throw new NoSuchFileException(path.toString());
         }

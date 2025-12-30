@@ -19,7 +19,8 @@ class BoxFsDirectoryStream implements DirectoryStream<Path> {
     @Override
     public Iterator<Path> iterator() {
         Collection<String> children = fileTree.readNode(directoryPath)
-                .children();
+                .map(BoxFsNode::children)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
 
         return children.stream()
                 .map(directoryPath::resolve)

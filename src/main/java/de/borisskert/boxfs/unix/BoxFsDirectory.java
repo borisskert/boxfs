@@ -121,7 +121,9 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public boolean isDirectory(Path path) {
-        return readNode(path).isDirectory();
+        return readNode(path)
+                .map(BoxFsNode::isDirectory)
+                .orElse(false);
     }
 
     @Override
@@ -131,11 +133,13 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public boolean isFile(Path path) {
-        return readNode(path).isFile();
+        return readNode(path)
+                .map(BoxFsNode::isFile)
+                .orElse(false);
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
+    public Optional<BoxFsNode> readNode(Path path) {
         if (path.getNameCount() < 1) {
             throw new IllegalArgumentException("Path must not be empty");
         }
@@ -143,19 +147,37 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         if (path.getNameCount() == 1) {
-            return children.get(name);
+            return Optional.ofNullable(children.get(name));
         }
 
-        return children.get(
-                name
-        ).readNode(
+        BoxFsNode child = children.get(name);
+        if (child == null) {
+            return Optional.empty();
+        }
+
+        return child.readNode(
                 path.subpath(1, path.getNameCount())
         );
     }
 
     @Override
     public void writeContent(Path path, ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Cannot write content to a directory");
+        if (path.getNameCount() < 1) {
+            throw new IllegalArgumentException("Path must not be empty");
+        }
+
+        String name = path.getName(0).toString();
+
+        if (path.getNameCount() == 1) {
+            children.get(name).writeContent(null, buffer);
+        } else {
+            children.get(
+                    name
+            ).writeContent(
+                    path.subpath(1, path.getNameCount()),
+                    buffer
+            );
+        }
     }
 
     @Override

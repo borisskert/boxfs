@@ -70,7 +70,7 @@ class BoxFsFile implements BoxFsNode {
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
+    public Optional<BoxFsNode> readNode(Path path) {
         throw new UnsupportedOperationException("Cannot get a child of a file");
     }
 
