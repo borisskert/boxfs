@@ -12,11 +12,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
     private final BoxFsNode fileTree;

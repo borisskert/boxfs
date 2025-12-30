@@ -150,7 +150,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
         BoxFsNode entry = fileTree.readNode(path)
                 .orElseThrow(() -> new RuntimeException("Not yet implemented"));
-        return (V) entry.fileAttributeView();
+        return entry.fileAttributeView();
     }
 
     @Override
