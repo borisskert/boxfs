@@ -86,8 +86,6 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
         if (fileTree.exists(target)) {
             if (replaceExisting) {
                 fileTree.delete(target);
-            } else {
-                throw new FileAlreadyExistsException(target.toString());
             }
         }
 
