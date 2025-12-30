@@ -323,6 +323,28 @@ abstract class FileSystemTest {
                         Files.write(largeFile, largeContent);
                         assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                     }
+
+                    @Test
+                    void shouldNotDoAnythingWhenCopyFileToSameTarget() throws IOException {
+                        Files.copy(file, file);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.size(file)).isEqualTo(12L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isTrue();
+                        assertThat(Files.isRegularFile(file)).isFalse();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isFalse();
+                        assertThat(Files.isWritable(file)).isFalse();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThatThrownBy(() -> Files.size(file)).isInstanceOf(IOException.class);
+                        assertThatThrownBy(() -> Files.readAttributes(file, "*")).isInstanceOf(IOException.class);
+                        assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
                 }
 
                 @Nested
@@ -377,6 +399,27 @@ abstract class FileSystemTest {
                         assertThat(Files.exists(file)).isTrue();
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                     }
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyEmptyFileToSameTarget() throws IOException {
+                    Files.copy(file, file);
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.size(file)).isEqualTo(0L);
+                    assertThat(Files.isDirectory(file)).isFalse();
+                    assertThat(Files.notExists(file)).isTrue();
+                    assertThat(Files.isRegularFile(file)).isFalse();
+                    assertThat(Files.isHidden(file)).isFalse();
+                    assertThat(Files.isSymbolicLink(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isFalse();
+                    assertThat(Files.isWritable(file)).isFalse();
+                    assertThat(Files.isExecutable(file)).isFalse();
+                    assertThatThrownBy(() -> Files.size(file)).isInstanceOf(IOException.class);
+                    assertThatThrownBy(() -> Files.readAttributes(file, "*")).isInstanceOf(IOException.class);
+                    assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
+                    assertThat(Files.isSameFile(file, file)).isTrue();
+                    assertThat(file.toString()).isEqualTo(testFilePath);
                 }
 
                 @Test

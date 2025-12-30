@@ -314,6 +314,25 @@ abstract class FileSystemTest {
                         Files.write(largeFile, largeContent);
                         assertThat(Files.readAllBytes(largeFile)).isEqualTo(largeContent);
                     }
+
+                    @Test
+                    void shouldNotDoAnythingWhenCopyFileToSameTarget() throws IOException {
+                        Files.copy(file, file);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThat(Files.size(file)).isEqualTo(12L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
                 }
 
                 @Nested
@@ -368,6 +387,24 @@ abstract class FileSystemTest {
                         assertThat(Files.exists(file)).isTrue();
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                     }
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyEmptyFileToSameTarget() throws IOException {
+                    Files.copy(file, file);
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.isDirectory(file)).isFalse();
+                    assertThat(Files.notExists(file)).isFalse();
+                    assertThat(Files.isRegularFile(file)).isTrue();
+                    assertThat(Files.isHidden(file)).isFalse();
+                    assertThat(Files.isSymbolicLink(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isTrue();
+                    assertThat(Files.isWritable(file)).isTrue();
+                    assertThat(Files.isExecutable(file)).isFalse();
+                    assertThat(Files.size(file)).isEqualTo(0L);
+                    assertThat(Files.isSameFile(file, file)).isTrue();
+                    assertThat(file.toString()).isEqualTo(testFilePath);
                 }
 
                 @Test

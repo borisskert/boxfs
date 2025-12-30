@@ -77,6 +77,20 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
+        if (isSameFile(source, target)) {
+            return;
+        }
+
+        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+        if (fileTree.exists(target)) {
+            if (replaceExisting) {
+                fileTree.delete(target);
+            } else {
+                throw new FileAlreadyExistsException(target.toString());
+            }
+        }
+
         Optional<BoxFsNode> node = fileTree.readNode(source);
         byte[] content;
 
