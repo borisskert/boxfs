@@ -80,6 +80,16 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
+        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+        if (fileTree.exists(target)) {
+            if (replaceExisting) {
+                fileTree.delete(target);
+            } else {
+                throw new FileAlreadyExistsException(target.toString());
+            }
+        }
+
         Optional<BoxFsNode> node = fileTree.readNode(source);
         byte[] content;
 
