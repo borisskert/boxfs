@@ -24,7 +24,8 @@ class BoxFsByteChannel implements SeekableByteChannel {
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();
 
-        BoxFsNode file = tree.readNode(path);
+        BoxFsNode file = tree.readNode(path)
+                .orElseThrow(() -> new IOException("File not found: " + path));
         byte[] content = file.content();
         int size = (int) file.attributes().size();
 
@@ -45,7 +46,9 @@ class BoxFsByteChannel implements SeekableByteChannel {
     @Override
     public int write(ByteBuffer src) throws IOException {
         int bytes = src.remaining();  // entscheidend!
-        tree.readNode(path).writeContent(path, src);
+        tree.readNode(path)
+                .orElseThrow(() -> new IOException("File not found: " + path))
+                .writeContent(path, src);
         return bytes;
     }
 
@@ -61,7 +64,10 @@ class BoxFsByteChannel implements SeekableByteChannel {
 
     @Override
     public long size() throws IOException {
-        return tree.readNode(path).attributes().size();
+        return tree.readNode(path)
+                .orElseThrow(() -> new IOException("File not found: " + path))
+                .attributes()
+                .size();
     }
 
     @Override

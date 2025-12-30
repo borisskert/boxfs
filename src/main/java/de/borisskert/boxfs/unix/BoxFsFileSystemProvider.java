@@ -15,6 +15,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 class BoxFsFileSystemProvider extends FileSystemProvider {
@@ -80,7 +81,15 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        byte[] content = fileTree.readNode(source).content();
+        Optional<BoxFsNode> node = fileTree.readNode(source);
+        byte[] content;
+
+        if (node.isPresent()) {
+            content = node.get().content();
+        } else {
+            throw new NoSuchFileException(source.toString());
+        }
+
         fileTree.createFile(target);
         fileTree.writeContent(target, ByteBuffer.wrap(content));
     }
@@ -111,7 +120,8 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        BoxFsNode boxFsNode = fileTree.readNode(path);
+        BoxFsNode boxFsNode = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
 
         if (!isAllowed(view.readAttributes().permissions(), modes)) {
@@ -121,14 +131,17 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-        BoxFsNode entry = fileTree.readNode(path);
+        BoxFsNode entry = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         return entry.fileAttributeView();
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
         if (fileTree.exists(path)) {
-            return fileTree.readNode(path).attributes();
+            return fileTree.readNode(path).map(BoxFsNode::attributes)
+                    .map(a -> (A) a)
+                    .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         } else {
             throw new NoSuchFileException(path.toString());
         }

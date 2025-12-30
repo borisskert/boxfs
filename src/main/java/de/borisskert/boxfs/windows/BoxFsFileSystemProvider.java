@@ -76,9 +76,14 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
-        byte[] content = fileTree.readNode(source)
-                .orElseThrow(() -> new IllegalStateException("Not yet implemented"))
-                .content();
+        Optional<BoxFsNode> node = fileTree.readNode(source);
+        byte[] content;
+
+        if (node.isPresent()) {
+            content = node.get().content();
+        } else {
+            throw new NoSuchFileException(source.toString());
+        }
 
         fileTree.createFile(target);
         fileTree.writeContent(target, ByteBuffer.wrap(content));
@@ -114,12 +119,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(path.toString());
         }
 
-        Optional<BoxFsNode> boxFsNode = fileTree.readNode(path);
-        if (!boxFsNode.isPresent()) {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
+        BoxFsNode boxFsNode = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
 
-        BoxFsFileAttributeView view = boxFsNode.get().fileAttributeView();
+        BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
         BoxFsAttributes attributes = (BoxFsAttributes) view.readAttributes();
 
         attributes.checkAccess(modes);
@@ -131,10 +134,9 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new UnsupportedOperationException("PosixFileAttributeView not supported");
         }
 
-        return fileTree.readNode(path)
-                .map(BoxFsNode::fileAttributeView)
-                .map(v -> (V) v)
-                .orElseThrow(() -> new UnsupportedOperationException("Not yet implemented"));
+        BoxFsNode entry = fileTree.readNode(path)
+                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+        return (V) entry.fileAttributeView();
     }
 
     @Override
@@ -143,10 +145,13 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new UnsupportedOperationException("PosixFileAttributes not supported");
         }
 
-        return fileTree.readNode(path)
-                .map(BoxFsNode::attributes)
-                .map(a -> (A) a)
-                .orElseThrow(() -> new NoSuchFileException(path.toString()));
+        if (fileTree.exists(path)) {
+            return fileTree.readNode(path).map(BoxFsNode::attributes)
+                    .map(a -> (A) a)
+                    .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+        } else {
+            throw new NoSuchFileException(path.toString());
+        }
     }
 
     @Override
