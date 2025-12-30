@@ -81,6 +81,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
+        if (isSameFile(source, target)) {
+            return;
+        }
+
         Optional<BoxFsNode> node = fileTree.readNode(source);
         byte[] content;
 

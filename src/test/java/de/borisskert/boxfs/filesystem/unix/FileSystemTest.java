@@ -329,19 +329,16 @@ abstract class FileSystemTest {
                         Files.copy(file, file);
 
                         assertThat(Files.exists(file)).isTrue();
-                        assertThat(Files.size(file)).isEqualTo(12L);
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
                         assertThat(Files.isDirectory(file)).isFalse();
-                        assertThat(Files.notExists(file)).isTrue();
-                        assertThat(Files.isRegularFile(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
                         assertThat(Files.isHidden(file)).isFalse();
                         assertThat(Files.isSymbolicLink(file)).isFalse();
-                        assertThat(Files.isReadable(file)).isFalse();
-                        assertThat(Files.isWritable(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
                         assertThat(Files.isExecutable(file)).isFalse();
-                        assertThatThrownBy(() -> Files.size(file)).isInstanceOf(IOException.class);
-                        assertThatThrownBy(() -> Files.readAttributes(file, "*")).isInstanceOf(IOException.class);
-                        assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
+                        assertThat(Files.size(file)).isEqualTo(12L);
                         assertThat(Files.isSameFile(file, file)).isTrue();
                         assertThat(file.toString()).isEqualTo(testFilePath);
                     }
@@ -408,16 +405,14 @@ abstract class FileSystemTest {
                     assertThat(Files.exists(file)).isTrue();
                     assertThat(Files.size(file)).isEqualTo(0L);
                     assertThat(Files.isDirectory(file)).isFalse();
-                    assertThat(Files.notExists(file)).isTrue();
-                    assertThat(Files.isRegularFile(file)).isFalse();
+                    assertThat(Files.notExists(file)).isFalse();
+                    assertThat(Files.isRegularFile(file)).isTrue();
                     assertThat(Files.isHidden(file)).isFalse();
                     assertThat(Files.isSymbolicLink(file)).isFalse();
-                    assertThat(Files.isReadable(file)).isFalse();
-                    assertThat(Files.isWritable(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isTrue();
+                    assertThat(Files.isWritable(file)).isTrue();
                     assertThat(Files.isExecutable(file)).isFalse();
-                    assertThatThrownBy(() -> Files.size(file)).isInstanceOf(IOException.class);
-                    assertThatThrownBy(() -> Files.readAttributes(file, "*")).isInstanceOf(IOException.class);
-                    assertThatThrownBy(() -> Files.getLastModifiedTime(file)).isInstanceOf(IOException.class);
+                    assertThat(Files.size(file)).isEqualTo(0L);
                     assertThat(Files.isSameFile(file, file)).isTrue();
                     assertThat(file.toString()).isEqualTo(testFilePath);
                 }
