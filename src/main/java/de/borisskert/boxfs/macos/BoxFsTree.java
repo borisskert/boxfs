@@ -71,9 +71,9 @@ class BoxFsTree implements BoxFsNode {
     }
 
     @Override
-    public BoxFsNode readNode(Path path) {
+    public Optional<BoxFsNode> readNode(Path path) {
         if (isRoot(path)) {
-            return rootDirectory;
+            return Optional.of(rootDirectory);
         }
 
         return rootDirectory.readNode(path);
