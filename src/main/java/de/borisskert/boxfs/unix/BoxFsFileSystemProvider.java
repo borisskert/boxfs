@@ -85,6 +85,12 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
+        for (CopyOption option : options) {
+            if (option == StandardCopyOption.REPLACE_EXISTING) {
+                fileTree.delete(target);
+            }
+        }
+
         Optional<BoxFsNode> node = fileTree.readNode(source);
         byte[] content;
 
