@@ -130,6 +130,12 @@ abstract class FileSystemTest {
                 }
             }
 
+            @Test
+            void shouldFailWhenTryingToCopyNonExistingFile() {
+                assertThatThrownBy(() -> Files.copy(file, fs.getPath("target.txt")))
+                        .isInstanceOf(NoSuchFileException.class);
+            }
+
             @Nested
             class CreateFile {
                 @BeforeEach
