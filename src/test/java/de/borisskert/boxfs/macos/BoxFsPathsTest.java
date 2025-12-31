@@ -14,9 +14,15 @@ abstract class BoxFsPathsTest {
     @Nested
     class Parent {
         @Test
-        void shouldGetParentOfSuperSimplePath() {
+        void shouldGetParentOfSuperSimpleAbsolutePath() {
             String parent = getParent("/directory");
             assertThat(parent).isEqualTo("/");
+        }
+
+        @Test
+        void shouldGetParentOfSuperSimpleRelativePath() {
+            String parent = getParent("directory");
+            assertThat(parent).isNull();
         }
 
         @Test

@@ -990,12 +990,14 @@ abstract class FileSystemTest {
     }
 
     private static void deleteRecursivelyIfExists(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        Path absolutePath = path.toAbsolutePath();
+
+        if (!Files.exists(absolutePath)) {
             return;
         }
 
-        if (Files.isDirectory(path)) {
-            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+        if (Files.isDirectory(absolutePath)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(absolutePath)) {
                 for (Path entry : entries) {
                     makeWritable(entry);
                     deleteRecursivelyIfExists(entry);
@@ -1003,8 +1005,8 @@ abstract class FileSystemTest {
             }
         }
 
-        makeWritable(path);
-        Files.delete(path);
+        makeWritable(absolutePath);
+        Files.delete(absolutePath);
     }
 
     private static void makeWritable(Path path) throws IOException {

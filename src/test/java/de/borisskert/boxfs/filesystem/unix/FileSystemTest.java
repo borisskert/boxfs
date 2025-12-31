@@ -966,12 +966,14 @@ abstract class FileSystemTest {
     }
 
     private static void deleteRecursivelyIfExists(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        Path absolutePath = path.toAbsolutePath();
+
+        if (!Files.exists(absolutePath)) {
             return;
         }
 
-        if (Files.isDirectory(path)) {
-            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+        if (Files.isDirectory(absolutePath)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(absolutePath)) {
                 for (Path entry : entries) {
                     makeWritable(entry);
                     deleteRecursivelyIfExists(entry);
@@ -979,11 +981,11 @@ abstract class FileSystemTest {
             }
         }
 
-        Path parent = path.getParent();
+        Path parent = absolutePath.getParent();
         Set<PosixFilePermission> parentPermissions = makeWritable(parent);
 
-        makeWritable(path);
-        Files.delete(path);
+        makeWritable(absolutePath);
+        Files.delete(absolutePath);
 
         Files.setPosixFilePermissions(parent, parentPermissions);
     }
