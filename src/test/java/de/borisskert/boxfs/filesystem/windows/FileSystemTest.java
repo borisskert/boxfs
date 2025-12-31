@@ -838,6 +838,35 @@ abstract class FileSystemTest {
                         assertThat(Files.isExecutable(dir)).isTrue();
                     }
                 }
+
+                @Nested
+                class CopyDirectoryToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("copyoftestdir");
+                        Files.copy(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyDirectory() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(dir)).isFalse();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+                    }
+                }
             }
         }
 
