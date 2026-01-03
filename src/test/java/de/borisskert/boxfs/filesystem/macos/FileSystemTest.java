@@ -862,6 +862,69 @@ abstract class FileSystemTest {
                         assertThat(Files.isExecutable(dir)).isTrue();
                     }
                 }
+
+                @Nested
+                class CreateSecondDirectory {
+                    String secondDirPath = "/seconddir";
+                    Path secondDir;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        secondDir = fs.getPath(secondDirPath);
+                        Files.createDirectory(secondDir);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(secondDir);
+                    }
+
+                    @Test
+                    void shouldCreateSecondDirectory() throws IOException {
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopySecondDirectoryToOtherWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(secondDir, dir))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopyOtherDirectoryToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(dir, secondDir))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldCopySecondDirectoryToOtherWithReplace() throws IOException {
+                        Files.copy(secondDir, dir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+
+                        assertThat(Files.isSameFile(dir, secondDir)).isFalse();
+                        assertThat(Files.isSameFile(secondDir, dir)).isFalse();
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
+                }
             }
         }
 
