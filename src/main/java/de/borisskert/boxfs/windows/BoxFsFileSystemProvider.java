@@ -108,7 +108,8 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        copy(source, target, options);
+        delete(source);
     }
 
     @Override
@@ -119,7 +120,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
     @Override
     public boolean isHidden(Path path) throws IOException {
         if (Files.notExists(path)) {
-            throw new FileNotFoundException(path.toString());
+            throw new NoSuchFileException(path.toString());
         }
 
         return false;
