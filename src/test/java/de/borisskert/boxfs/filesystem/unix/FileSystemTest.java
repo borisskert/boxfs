@@ -873,6 +873,37 @@ abstract class FileSystemTest {
                     }
                 }
 
+
+                @Test
+                void shouldNotDoAnythingWhenCopyFileToSameTarget() throws IOException {
+                    Files.copy(dir, dir);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyFileToSameTargetWIthReplaceExisting() throws IOException {
+                    Files.copy(dir, dir, REPLACE_EXISTING);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
                 @Nested
                 class CreateSecondDirectory {
                     String secondDirPath = "/seconddir";
