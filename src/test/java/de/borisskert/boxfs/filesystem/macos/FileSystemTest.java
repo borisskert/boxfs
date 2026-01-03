@@ -809,6 +809,65 @@ abstract class FileSystemTest {
                             assertThat(Files.exists(fileInDir)).isFalse();
                         }
                     }
+
+                    @Nested
+                    class CopyDirectory {
+                        String targetDirPath = "/targetdir";
+                        Path target;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            target = fs.getPath(targetDirPath);
+                            Files.copy(dir, target);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(target);
+                        }
+
+                        @Test
+                        void shouldCreateTargetDirectory() throws IOException {
+                            assertThat(Files.exists(target)).isTrue();
+                            assertThat(Files.isDirectory(target)).isTrue();
+                            assertThat(Files.notExists(target)).isFalse();
+                            assertThat(Files.isRegularFile(target)).isFalse();
+                            assertThat(Files.isHidden(target)).isFalse();
+                            assertThat(Files.isSymbolicLink(target)).isFalse();
+                            assertThat(Files.isReadable(target)).isTrue();
+                            assertThat(Files.isWritable(target)).isTrue();
+                            assertThat(Files.isExecutable(target)).isTrue();
+                        }
+
+                        @Test
+                        void shouldLeaveSourceDirectory() throws IOException {
+                            assertThat(Files.exists(dir)).isTrue();
+                            assertThat(Files.isDirectory(dir)).isTrue();
+                            assertThat(Files.notExists(dir)).isFalse();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+                            assertThat(Files.isHidden(dir)).isFalse();
+                            assertThat(Files.isSymbolicLink(dir)).isFalse();
+                            assertThat(Files.isReadable(dir)).isTrue();
+                            assertThat(Files.isWritable(dir)).isTrue();
+                            assertThat(Files.isExecutable(dir)).isTrue();
+                        }
+
+                        @Test
+                        void shouldNotCopyContainedFile() {
+                            Path fileInTarget = target.resolve("testfile.txt");
+
+                            assertThat(Files.exists(fileInTarget)).isFalse();
+                            assertThat(Files.isRegularFile(fileInTarget)).isFalse();
+                            assertThatThrownBy(() -> Files.size(fileInTarget)).isInstanceOf(NoSuchFileException.class);
+                        }
+
+                        @Test
+                        void shouldLeaveExistingFileInSourceDir() throws IOException {
+                            assertThat(Files.exists(fileInDir)).isTrue();
+                            assertThat(Files.isRegularFile(fileInDir)).isTrue();
+                            assertThat(Files.size(fileInDir)).isEqualTo(0);
+                        }
+                    }
                 }
 
                 @Nested
