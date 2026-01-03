@@ -1006,6 +1006,48 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
+                class MoveDirectoryToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("targetdir");
+                        Files.move(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.move(target, dir);
+                    }
+
+                    @Test
+                    void shouldCreateSourceInTarget() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldDeleteSource() {
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.notExists(dir)).isTrue();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThatThrownBy(() -> Files.isHidden(dir)).isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+                    }
+                }
+
+                @Nested
                 class CreateSecondDirectory {
                     String secondDirPath = "C:\\seconddir";
                     Path secondDir;
