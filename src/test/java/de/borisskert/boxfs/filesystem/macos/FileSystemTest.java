@@ -408,6 +408,58 @@ abstract class FileSystemTest {
                     assertThat(file.toString()).isEqualTo(testFilePath);
                 }
 
+                @Nested
+                class MoveFileToAbsoluteSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("/target.txt");
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.deleteIfExists(target);
+                    }
+
+                    @Test
+                    void shouldMoveFile() throws IOException {
+                        Files.move(file, target);
+
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
+
+                        assertThat(Files.exists(file)).isFalse();
+                    }
+                }
+
+                @Nested
+                class MoveFileToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("target.txt");
+                        Files.write(file, "Hello World!".getBytes());
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.deleteIfExists(target);
+                    }
+
+                    @Test
+                    void shouldMoveFile() throws IOException {
+                        Files.move(file, target);
+
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
+
+                        assertThat(Files.exists(file)).isFalse();
+                    }
+                }
+
                 @Test
                 @Disabled
                 void shouldNotBeAbleToGetDosFilePermissions() {
