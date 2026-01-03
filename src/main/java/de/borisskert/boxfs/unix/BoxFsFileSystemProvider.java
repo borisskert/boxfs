@@ -113,8 +113,49 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
-        copy(source, target, options);
+        moveRecursively(source, target, options);
+    }
+
+    private void moveRecursively(Path source, Path target, CopyOption... options) throws IOException {
+        Optional<BoxFsNode> node = fileTree.readNode(source);
+        if (!node.isPresent()) {
+            throw new NoSuchFileException(source.toString());
+        }
+
+        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+        if (node.get().attributes().isDirectory()) {
+            if (fileTree.exists(target)) {
+                if (replaceExisting) {
+                    deleteRecursively(target);
+                } else {
+                    throw new FileAlreadyExistsException(target.toString());
+                }
+            }
+
+            fileTree.createDirectory(target);
+            try (DirectoryStream<Path> stream = newDirectoryStream(source, entry -> true)) {
+                for (Path entry : stream) {
+                    Path targetEntry = target.resolve(entry.getFileName().toString());
+                    moveRecursively(entry, targetEntry, options);
+                }
+            }
+        } else {
+            copy(source, target, options);
+        }
+
         delete(source);
+    }
+
+    private void deleteRecursively(Path path) throws IOException {
+        if (fileTree.isDirectory(path)) {
+            try (DirectoryStream<Path> stream = newDirectoryStream(path, entry -> true)) {
+                for (Path entry : stream) {
+                    deleteRecursively(entry);
+                }
+            }
+        }
+        delete(path);
     }
 
     @Override
