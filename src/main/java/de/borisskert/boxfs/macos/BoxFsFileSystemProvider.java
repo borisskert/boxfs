@@ -109,7 +109,8 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        copy(source, target, options);
+        delete(source);
     }
 
     @Override
@@ -134,7 +135,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
         }
 
         BoxFsNode boxFsNode = fileTree.readNode(path)
-                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+                .orElseThrow(() -> new UnsupportedOperationException("Not yet implemented"));
 
         BoxFsFileAttributeView view = boxFsNode.fileAttributeView();
 
@@ -146,7 +147,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
         BoxFsNode entry = fileTree.readNode(path)
-                .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+                .orElseThrow(() -> new UnsupportedOperationException("Not yet implemented"));
         return entry.fileAttributeView();
     }
 
@@ -155,7 +156,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
         if (fileTree.exists(path)) {
             return fileTree.readNode(path).map(BoxFsNode::attributes)
                     .map(a -> (A) a)
-                    .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+                    .orElseThrow(() -> new UnsupportedOperationException("Not yet implemented"));
         } else {
             throw new NoSuchFileException(path.toString());
         }

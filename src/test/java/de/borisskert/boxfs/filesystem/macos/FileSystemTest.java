@@ -889,6 +889,19 @@ abstract class FileSystemTest {
                     void shouldCopyDirectory() throws IOException {
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldLeaveSourceDirectory() throws IOException {
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
                         assertThat(Files.notExists(dir)).isFalse();
                         assertThat(Files.isRegularFile(dir)).isFalse();
                         assertThat(Files.isHidden(dir)).isFalse();
@@ -956,6 +969,48 @@ abstract class FileSystemTest {
                     assertThat(Files.isReadable(dir)).isTrue();
                     assertThat(Files.isWritable(dir)).isTrue();
                     assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Nested
+                class MoveDirectoryToAbsoluteSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("/targetdir");
+                        Files.move(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.move(target, dir);
+                    }
+
+                    @Test
+                    void shouldCreateSourceInTarget() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldDeleteSource() throws IOException {
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.notExists(dir)).isTrue();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+                    }
                 }
 
                 @Nested
