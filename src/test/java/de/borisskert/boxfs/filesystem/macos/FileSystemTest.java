@@ -590,8 +590,24 @@ abstract class FileSystemTest {
 
             @Test
             void shouldFailToCopyNotExistingDirectory() {
-                assertThatThrownBy(() -> Files.copy(dir, fs.getPath("/targetdir")))
+                Path target = fs.getPath("/targetdir");
+
+                assertThatThrownBy(() -> Files.copy(dir, target))
                         .isInstanceOf(NoSuchFileException.class);
+
+                assertThat(Files.exists(dir)).isFalse();
+                assertThat(Files.exists(target)).isFalse();
+            }
+
+            @Test
+            void shouldFailToMoveNotExistingDirectory() {
+                Path target = fs.getPath("/targetdir");
+
+                assertThatThrownBy(() -> Files.move(dir, target))
+                        .isInstanceOf(NoSuchFileException.class);
+
+                assertThat(Files.exists(dir)).isFalse();
+                assertThat(Files.exists(target)).isFalse();
             }
 
             @Nested
@@ -889,6 +905,19 @@ abstract class FileSystemTest {
                     void shouldCopyDirectory() throws IOException {
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldLeaveSourceDirectory() throws IOException {
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
                         assertThat(Files.notExists(dir)).isFalse();
                         assertThat(Files.isRegularFile(dir)).isFalse();
                         assertThat(Files.isHidden(dir)).isFalse();
@@ -959,6 +988,120 @@ abstract class FileSystemTest {
                 }
 
                 @Nested
+                class MoveDirectoryToAbsoluteSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("/targetdir");
+                        Files.move(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.move(target, dir);
+                    }
+
+                    @Test
+                    void shouldCreateSourceInTarget() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldDeleteSource() throws IOException {
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.notExists(dir)).isTrue();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+                    }
+                }
+
+                @Nested
+                class MoveDirectoryToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("targetdir");
+                        Files.move(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        Files.move(target, dir);
+                    }
+
+                    @Test
+                    void shouldCreateSourceInTarget() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldDeleteSource() throws IOException {
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.notExists(dir)).isTrue();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+                    }
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenMoveFileToSameTarget() throws IOException {
+                    Files.move(dir, dir);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenMoveFileToSameTargetWIthReplaceExisting() throws IOException {
+                    Files.move(dir, dir, REPLACE_EXISTING);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Nested
                 class CreateSecondDirectory {
                     String secondDirPath = "/seconddir";
                     Path secondDir;
@@ -992,7 +1135,7 @@ abstract class FileSystemTest {
                     @Test
                     void shouldFailWhenTryingToCopyOtherDirectoryToSecondWithoutReplace() {
                         assertThatThrownBy(() -> Files.copy(dir, secondDir))
-                                .isInstanceOf(IOException.class);
+                                .isInstanceOf(FileAlreadyExistsException.class);
                     }
 
                     @Test
@@ -1013,6 +1156,69 @@ abstract class FileSystemTest {
 
                         assertThat(Files.isSameFile(dir, secondDir)).isFalse();
                         assertThat(Files.isSameFile(secondDir, dir)).isFalse();
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToMoveOtherDirectoryToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.move(dir, secondDir))
+                                .isInstanceOf(FileAlreadyExistsException.class);
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                    }
+
+                    @Test
+                    void shouldMoveDirectoryToSecondWithReplace() throws IOException {
+                        Files.move(dir, secondDir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+
+                        assertThatThrownBy(() -> Files.isSameFile(dir, secondDir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(secondDir, dir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
+
+                    @Test
+                    void shouldMoveSecondDirectoryToOtherWithReplace() throws IOException {
+                        Files.move(secondDir, dir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(secondDir)).isFalse();
+                        assertThat(Files.isDirectory(secondDir)).isFalse();
+                        assertThat(Files.isReadable(secondDir)).isFalse();
+                        assertThat(Files.isWritable(secondDir)).isFalse();
+                        assertThat(Files.isExecutable(secondDir)).isFalse();
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+
+                        assertThatThrownBy(() -> Files.isSameFile(dir, secondDir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(secondDir, dir))
+                                .isInstanceOf(NoSuchFileException.class);
                         assertThat(Files.isSameFile(dir, dir)).isTrue();
                         assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
 

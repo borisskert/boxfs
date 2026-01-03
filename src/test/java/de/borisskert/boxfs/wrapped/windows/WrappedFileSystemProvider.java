@@ -114,19 +114,6 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... modes) throws IOException {
-//        path = unwrap(path);
-//        for (AccessMode mode : modes) {
-//            switch (mode) {
-//                case READ:
-//                    if (!Files.isReadable(path)) throw new AccessDeniedException(path.toString());
-//                    break;
-//                case WRITE:
-//                    if (!Files.isWritable(path)) throw new AccessDeniedException(path.toString());
-//                    break;
-//                case EXECUTE:
-//                    if (!Files.isExecutable(path)) throw new AccessDeniedException(path.toString());
-//            }
-//        }
         delegate.checkAccess(unwrap(path), modes);
     }
 
