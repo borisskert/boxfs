@@ -915,7 +915,7 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldCreateSecondDirectory() throws IOException {
+                    void shouldCreateSecondDirectory() {
                         assertThat(Files.exists(secondDir)).isTrue();
                         assertThat(Files.isDirectory(secondDir)).isTrue();
                         assertThat(Files.isReadable(secondDir)).isTrue();

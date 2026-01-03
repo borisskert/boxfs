@@ -94,7 +94,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(source.toString());
         }
 
-        if(node.get().attributes().isDirectory()) {
+        if (node.get().attributes().isDirectory()) {
             fileTree.createDirectory(target);
         } else {
             copyFile(node.get(), target);
