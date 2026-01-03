@@ -1063,6 +1063,36 @@ abstract class FileSystemTest {
                     }
                 }
 
+                @Test
+                void shouldNotDoAnythingWhenMoveFileToSameTarget() throws IOException {
+                    Files.move(dir, dir);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenMoveFileToSameTargetWIthReplaceExisting() throws IOException {
+                    Files.move(dir, dir, REPLACE_EXISTING);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
                 @Nested
                 class CreateSecondDirectory {
                     String secondDirPath = "C:\\seconddir";
