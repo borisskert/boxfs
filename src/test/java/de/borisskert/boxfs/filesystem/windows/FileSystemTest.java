@@ -590,6 +590,12 @@ abstract class FileSystemTest {
                 assertThatThrownBy(() -> Files.size(dir)).isInstanceOf(NoSuchFileException.class);
             }
 
+            @Test
+            void shouldFailToCopyNotExistingDirectory() {
+                assertThatThrownBy(() -> Files.copy(dir, fs.getPath("/targetdir")))
+                        .isInstanceOf(NoSuchFileException.class);
+            }
+
             @Nested
             class CreateDirectory {
 
