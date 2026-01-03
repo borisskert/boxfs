@@ -27,20 +27,20 @@ class BoxFsTree implements BoxFsNode {
 
     @Override
     public void createDirectory(Path path) throws IOException {
-        if (!path.isAbsolute()) {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
+        Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(path);
+        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
 
-        if (path.getNameCount() < 1) {
+        if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
         if (foundDrive.isPresent()) {
             foundDrive.get().createDirectory(
-                    path.subpath(0, path.getNameCount())
+                    absolutePath.subpath(0, absolutePath.getNameCount())
             );
+        } else {
+            throw new NoSuchFileException(absolutePath.toString());
         }
     }
 

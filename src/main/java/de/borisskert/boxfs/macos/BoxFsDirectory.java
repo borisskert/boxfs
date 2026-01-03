@@ -146,9 +146,12 @@ class BoxFsDirectory implements BoxFsNode {
         String name = path.getName(0).toString();
 
         BoxFsNode child = children.get(BoxFsFileName.of(name));
+        if (child == null) {
+            return Optional.empty();
+        }
 
         if (path.getNameCount() == 1) {
-            return Optional.ofNullable(child);
+            return Optional.of(child);
         }
 
         return child.readNode(

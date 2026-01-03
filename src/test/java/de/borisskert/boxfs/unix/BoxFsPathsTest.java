@@ -1,4 +1,4 @@
-package de.borisskert.boxfs.macos;
+package de.borisskert.boxfs.unix;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

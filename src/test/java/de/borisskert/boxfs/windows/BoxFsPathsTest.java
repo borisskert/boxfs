@@ -22,6 +22,12 @@ abstract class BoxFsPathsTest {
         }
 
         @Test
+        void shouldGetParentOfSuperSimpleRelativePath() {
+            String parent = getParent("directory");
+            assertThat(parent).isNull();
+        }
+
+        @Test
         void shouldGetParentOfSimplePath() {
             String parent = getParent("C:\\directory\\file.txt");
             assertThat(parent).isEqualTo("C:\\directory");

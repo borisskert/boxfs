@@ -81,21 +81,28 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
-        for (CopyOption option : options) {
-            if (option == StandardCopyOption.REPLACE_EXISTING) {
+        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+        if (fileTree.exists(target)) {
+            if (replaceExisting) {
                 fileTree.delete(target);
             }
         }
 
         Optional<BoxFsNode> node = fileTree.readNode(source);
-        byte[] content;
-
-        if (node.isPresent()) {
-            content = node.get().content();
-        } else {
+        if (!node.isPresent()) {
             throw new NoSuchFileException(source.toString());
         }
 
+        if (node.get().attributes().isDirectory()) {
+            fileTree.createDirectory(target);
+        } else {
+            copyFile(node.get(), target);
+        }
+    }
+
+    private void copyFile(BoxFsNode boxFsNode, Path target) throws IOException {
+        byte[] content = boxFsNode.content();
         fileTree.createFile(target);
         fileTree.writeContent(target, ByteBuffer.wrap(content));
     }

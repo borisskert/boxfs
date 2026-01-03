@@ -90,14 +90,19 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
         }
 
         Optional<BoxFsNode> node = fileTree.readNode(source);
-        byte[] content;
-
-        if (node.isPresent()) {
-            content = node.get().content();
-        } else {
+        if (!node.isPresent()) {
             throw new NoSuchFileException(source.toString());
         }
 
+        if (node.get().attributes().isDirectory()) {
+            fileTree.createDirectory(target);
+        } else {
+            copyFile(node.get(), target);
+        }
+    }
+
+    private void copyFile(BoxFsNode boxFsNode, Path target) throws IOException {
+        byte[] content = boxFsNode.content();
         fileTree.createFile(target);
         fileTree.writeContent(target, ByteBuffer.wrap(content));
     }

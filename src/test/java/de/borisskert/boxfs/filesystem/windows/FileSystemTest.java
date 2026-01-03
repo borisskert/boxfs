@@ -590,6 +590,12 @@ abstract class FileSystemTest {
                 assertThatThrownBy(() -> Files.size(dir)).isInstanceOf(NoSuchFileException.class);
             }
 
+            @Test
+            void shouldFailToCopyNotExistingDirectory() {
+                assertThatThrownBy(() -> Files.copy(dir, fs.getPath("/targetdir")))
+                        .isInstanceOf(NoSuchFileException.class);
+            }
+
             @Nested
             class CreateDirectory {
 
@@ -809,6 +815,157 @@ abstract class FileSystemTest {
                         }
                     }
                 }
+
+                @Nested
+                class CopyDirectoryToAbsoluteSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("C:\\copyoftestdir");
+                        Files.copy(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyDirectory() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(dir)).isFalse();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+                    }
+                }
+
+                @Nested
+                class CopyDirectoryToRelativeSimpleTarget {
+                    private Path target;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        target = fs.getPath("copyoftestdir");
+                        Files.copy(dir, target);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(target);
+                    }
+
+                    @Test
+                    void shouldCopyDirectory() throws IOException {
+                        assertThat(Files.exists(target)).isTrue();
+                        assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(dir)).isFalse();
+                        assertThat(Files.isRegularFile(dir)).isFalse();
+                        assertThat(Files.isHidden(dir)).isFalse();
+                        assertThat(Files.isSymbolicLink(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+                    }
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyFileToSameTarget() throws IOException {
+                    Files.copy(dir, dir);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldNotDoAnythingWhenCopyFileToSameTargetWIthReplaceExisting() throws IOException {
+                    Files.copy(dir, dir, REPLACE_EXISTING);
+
+                    assertThat(Files.exists(dir)).isTrue();
+                    assertThat(Files.isDirectory(dir)).isTrue();
+                    assertThat(Files.notExists(dir)).isFalse();
+                    assertThat(Files.isRegularFile(dir)).isFalse();
+                    assertThat(Files.isHidden(dir)).isFalse();
+                    assertThat(Files.isSymbolicLink(dir)).isFalse();
+                    assertThat(Files.isReadable(dir)).isTrue();
+                    assertThat(Files.isWritable(dir)).isTrue();
+                    assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Nested
+                class CreateSecondDirectory {
+                    String secondDirPath = "C:\\seconddir";
+                    Path secondDir;
+
+                    @BeforeEach
+                    void setup() throws IOException {
+                        secondDir = fs.getPath(secondDirPath);
+                        Files.createDirectory(secondDir);
+                    }
+
+                    @AfterEach
+                    void teardown() throws IOException {
+                        deleteRecursivelyIfExists(secondDir);
+                    }
+
+                    @Test
+                    void shouldCreateSecondDirectory() {
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopySecondDirectoryToOtherWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(secondDir, dir))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToCopyOtherDirectoryToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.copy(dir, secondDir))
+                                .isInstanceOf(IOException.class);
+                    }
+
+                    @Test
+                    void shouldCopySecondDirectoryToOtherWithReplace() throws IOException {
+                        Files.copy(secondDir, dir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+
+                        assertThat(Files.isSameFile(dir, secondDir)).isFalse();
+                        assertThat(Files.isSameFile(secondDir, dir)).isFalse();
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
+                }
             }
         }
 
@@ -932,12 +1089,14 @@ abstract class FileSystemTest {
     }
 
     private static void deleteRecursivelyIfExists(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        Path absolutePath = path.toAbsolutePath();
+
+        if (!Files.exists(absolutePath)) {
             return;
         }
 
-        if (Files.isDirectory(path)) {
-            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+        if (Files.isDirectory(absolutePath)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(absolutePath)) {
                 for (Path entry : entries) {
                     makeWritable(entry);
                     deleteRecursivelyIfExists(entry);
@@ -945,8 +1104,8 @@ abstract class FileSystemTest {
             }
         }
 
-        makeWritable(path);
-        Files.delete(path);
+        makeWritable(absolutePath);
+        Files.delete(absolutePath);
     }
 
     private static void makeWritable(Path path) throws IOException {
