@@ -592,35 +592,17 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    void shouldFailWhenTryingToCopySecondFileToOtherWithoutReplace() {
-                        assertThatThrownBy(() -> Files.copy(secondFile, file))
-                                .isInstanceOf(IOException.class);
-                    }
-
-                    @Test
-                    void shouldCopySecondFileToOtherWithReplace() throws IOException {
-                        Files.copy(secondFile, file, REPLACE_EXISTING);
-
-                        assertThat(Files.exists(file)).isTrue();
-                        assertThat(Files.isDirectory(file)).isFalse();
-                        assertThat(Files.notExists(file)).isFalse();
-                        assertThat(Files.isRegularFile(file)).isTrue();
-                        assertThat(Files.isHidden(file)).isFalse();
-                        assertThat(Files.isSymbolicLink(file)).isFalse();
-                        assertThat(Files.isReadable(file)).isTrue();
-                        assertThat(Files.isWritable(file)).isTrue();
-                        assertThat(Files.isExecutable(file)).isTrue();
-                        assertThat(Files.size(file)).isEqualTo(16L);
-                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World! (2)".getBytes());
-                        assertThat(Files.isSameFile(file, secondFile)).isFalse();
-                        assertThat(Files.isSameFile(file, file)).isTrue();
-                        assertThat(file.toString()).isEqualTo(testFilePath);
-                    }
-
-                    @Test
                     void shouldFailWhenTryingToCopyOtherFileToSecondWithoutReplace() {
                         assertThatThrownBy(() -> Files.copy(file, secondFile))
                                 .isInstanceOf(IOException.class);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
                     }
 
                     @Test
@@ -638,7 +620,126 @@ abstract class FileSystemTest {
                         assertThat(Files.isExecutable(secondFile)).isTrue();
                         assertThat(Files.size(secondFile)).isEqualTo(0L);
                         assertThat(Files.readAllBytes(secondFile)).isEqualTo(new byte[0]);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isTrue();
+                        assertThat(Files.size(file)).isEqualTo(0L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo(new byte[0]);
+
                         assertThat(Files.isSameFile(secondFile, file)).isFalse();
+                        assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
+                        assertThat(secondFile.toString()).isEqualTo(secondFilePath);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToMoveSecondFileToOtherWithoutReplace() {
+                        assertThatThrownBy(() -> Files.move(secondFile, file))
+                                .isInstanceOf(IOException.class);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
+                    }
+
+                    @Test
+                    void shouldMoveSecondFileToOtherWithReplace() throws IOException {
+                        Files.move(secondFile, file, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+                        assertThat(Files.isHidden(file)).isFalse();
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isTrue();
+                        assertThat(Files.isWritable(file)).isTrue();
+                        assertThat(Files.isExecutable(file)).isTrue();
+                        assertThat(Files.size(file)).isEqualTo(16L);
+                        assertThat(Files.readAllBytes(file)).isEqualTo("Hello World! (2)".getBytes());
+
+                        assertThat(Files.exists(secondFile)).isFalse();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.notExists(secondFile)).isTrue();
+                        assertThat(Files.isRegularFile(secondFile)).isFalse();
+                        assertThatThrownBy(() -> Files.isHidden(secondFile))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSymbolicLink(secondFile)).isFalse();
+                        assertThat(Files.isReadable(secondFile)).isFalse();
+                        assertThat(Files.isWritable(secondFile)).isFalse();
+                        assertThat(Files.isExecutable(secondFile)).isFalse();
+                        assertThatThrownBy(() -> Files.size(secondFile))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.readAllBytes(secondFile)).
+                                isInstanceOf(NoSuchFileException.class);
+
+                        assertThatThrownBy(() -> Files.isSameFile(file, secondFile))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(secondFile, file))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSameFile(file, file)).isTrue();
+                        assertThat(file.toString()).isEqualTo(testFilePath);
+                    }
+
+                    @Test
+                    void shouldFailWhenTryingToMoveOtherFileToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.move(file, secondFile))
+                                .isInstanceOf(IOException.class);
+
+                        assertThat(Files.exists(file)).isTrue();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.isRegularFile(file)).isTrue();
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
+                    }
+
+                    @Test
+                    void shouldMoveOtherFileToSecondWithReplace() throws IOException {
+                        Files.move(file, secondFile, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.isDirectory(secondFile)).isFalse();
+                        assertThat(Files.notExists(secondFile)).isFalse();
+                        assertThat(Files.isRegularFile(secondFile)).isTrue();
+                        assertThat(Files.isHidden(secondFile)).isFalse();
+                        assertThat(Files.isSymbolicLink(secondFile)).isFalse();
+                        assertThat(Files.isReadable(secondFile)).isTrue();
+                        assertThat(Files.isWritable(secondFile)).isTrue();
+                        assertThat(Files.isExecutable(secondFile)).isTrue();
+                        assertThat(Files.size(secondFile)).isEqualTo(0L);
+                        assertThat(Files.readAllBytes(secondFile)).isEqualTo(new byte[0]);
+
+                        assertThat(Files.exists(file)).isFalse();
+                        assertThat(Files.isDirectory(file)).isFalse();
+                        assertThat(Files.notExists(file)).isTrue();
+                        assertThat(Files.isRegularFile(file)).isFalse();
+                        assertThatThrownBy(() -> Files.isHidden(file))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSymbolicLink(file)).isFalse();
+                        assertThat(Files.isReadable(file)).isFalse();
+                        assertThat(Files.isWritable(file)).isFalse();
+                        assertThat(Files.isExecutable(file)).isFalse();
+                        assertThatThrownBy(() -> Files.size(file))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.readAllBytes(file)).
+                                isInstanceOf(NoSuchFileException.class);
+
+                        assertThatThrownBy(() -> Files.isSameFile(secondFile, file))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(file, secondFile))
+                                .isInstanceOf(NoSuchFileException.class);
                         assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
                         assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
