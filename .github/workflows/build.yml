@@ -6,11 +6,13 @@ on:
     branches:
       - main
   pull_request:
+    types: [ opened, synchronize, reopened, ready_for_review ]
     branches:
       - main
 
 jobs:
   build:
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     name: "Build and Test (OS: ${{ matrix.os }}, Java: ${{ matrix.java }})"
     runs-on: ${{ matrix.os }}
 
