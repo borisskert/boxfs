@@ -1130,6 +1130,69 @@ abstract class FileSystemTest {
                         assertThat(dir.toString()).isEqualTo(testDirPath);
                         assertThat(secondDir.toString()).isEqualTo(secondDirPath);
                     }
+
+                    @Test
+                    void shouldFailWhenTryingToMoveOtherDirectoryToSecondWithoutReplace() {
+                        assertThatThrownBy(() -> Files.move(dir, secondDir))
+                                .isInstanceOf(FileAlreadyExistsException.class);
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                    }
+
+                    @Test
+                    void shouldMoveDirectoryToSecondWithReplace() throws IOException {
+                        Files.move(dir, secondDir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(dir)).isFalse();
+                        assertThat(Files.isDirectory(dir)).isFalse();
+                        assertThat(Files.isReadable(dir)).isFalse();
+                        assertThat(Files.isWritable(dir)).isFalse();
+                        assertThat(Files.isExecutable(dir)).isFalse();
+
+                        assertThat(Files.exists(secondDir)).isTrue();
+                        assertThat(Files.isDirectory(secondDir)).isTrue();
+                        assertThat(Files.isReadable(secondDir)).isTrue();
+                        assertThat(Files.isWritable(secondDir)).isTrue();
+                        assertThat(Files.isExecutable(secondDir)).isTrue();
+
+                        assertThatThrownBy(() -> Files.isSameFile(dir, secondDir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(secondDir, dir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
+
+                    @Test
+                    void shouldMoveSecondDirectoryToOtherWithReplace() throws IOException {
+                        Files.move(secondDir, dir, REPLACE_EXISTING);
+
+                        assertThat(Files.exists(secondDir)).isFalse();
+                        assertThat(Files.isDirectory(secondDir)).isFalse();
+                        assertThat(Files.isReadable(secondDir)).isFalse();
+                        assertThat(Files.isWritable(secondDir)).isFalse();
+                        assertThat(Files.isExecutable(secondDir)).isFalse();
+
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
+                        assertThat(Files.isReadable(dir)).isTrue();
+                        assertThat(Files.isWritable(dir)).isTrue();
+                        assertThat(Files.isExecutable(dir)).isTrue();
+
+                        assertThatThrownBy(() -> Files.isSameFile(dir, secondDir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThatThrownBy(() -> Files.isSameFile(secondDir, dir))
+                                .isInstanceOf(NoSuchFileException.class);
+                        assertThat(Files.isSameFile(dir, dir)).isTrue();
+                        assertThat(Files.isSameFile(secondDir, secondDir)).isTrue();
+
+                        assertThat(dir.toString()).isEqualTo(testDirPath);
+                        assertThat(secondDir.toString()).isEqualTo(secondDirPath);
+                    }
                 }
             }
         }
