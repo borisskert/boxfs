@@ -130,8 +130,24 @@ abstract class FileSystemTest {
 
             @Test
             void shouldFailWhenTryingToCopyNonExistingFile() {
-                assertThatThrownBy(() -> Files.copy(file, fs.getPath("target.txt")))
+                Path target = fs.getPath("target.txt");
+
+                assertThatThrownBy(() -> Files.copy(file, target))
                         .isInstanceOf(NoSuchFileException.class);
+
+                assertThat(Files.exists(file)).isFalse();
+                assertThat(Files.exists(target)).isFalse();
+            }
+
+            @Test
+            void shouldFailWhenTryingToMoveNonExistingFile() {
+                Path target = fs.getPath("target.txt");
+
+                assertThatThrownBy(() -> Files.move(file, target))
+                        .isInstanceOf(NoSuchFileException.class);
+
+                assertThat(Files.exists(file)).isFalse();
+                assertThat(Files.exists(target)).isFalse();
             }
 
             @Nested
