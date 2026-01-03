@@ -1076,6 +1076,53 @@ abstract class FileSystemTest {
                             assertThat(Files.size(fileInDir)).isEqualTo(0);
                         }
                     }
+
+                    @Nested
+                    class MoveDirectory {
+                        String targetDirPath = "/targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            targetFile = target.resolve("testfile.txt");
+
+                            Files.move(dir, target);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.move(target, dir);
+                        }
+
+                        @Test
+                        void shouldMoveDirectoryAndContentsToTarget() throws IOException {
+                            assertThat(Files.exists(target)).isTrue();
+                            assertThat(Files.isDirectory(target)).isTrue();
+                            assertThat(Files.isRegularFile(target)).isFalse();
+
+                            assertThat(Files.exists(targetFile)).isTrue();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isTrue();
+
+                            assertThat(Files.size(targetFile)).isEqualTo(12L);
+                            assertThat(Files.readAllBytes(targetFile)).isEqualTo("Hello World!".getBytes());
+                        }
+
+                        @Test
+                        void shouldRemoveDirectoryAndContentsFromSource() {
+                            assertThat(Files.exists(dir)).isFalse();
+                            assertThat(Files.isDirectory(dir)).isFalse();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isFalse();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+                    }
                 }
 
                 @Nested
