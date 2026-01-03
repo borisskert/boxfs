@@ -109,7 +109,8 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        copy(source, target, options);
+        delete(source);
     }
 
     @Override
