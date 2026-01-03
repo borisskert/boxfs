@@ -477,6 +477,24 @@ abstract class FileSystemTest {
                 }
 
                 @Test
+                void shouldNotDoAnythingWhenMoveEmptyFileToSameTarget() throws IOException {
+                    Files.move(file, file);
+
+                    assertThat(Files.exists(file)).isTrue();
+                    assertThat(Files.isDirectory(file)).isFalse();
+                    assertThat(Files.notExists(file)).isFalse();
+                    assertThat(Files.isRegularFile(file)).isTrue();
+                    assertThat(Files.isHidden(file)).isFalse();
+                    assertThat(Files.isSymbolicLink(file)).isFalse();
+                    assertThat(Files.isReadable(file)).isTrue();
+                    assertThat(Files.isWritable(file)).isTrue();
+                    assertThat(Files.isExecutable(file)).isFalse();
+                    assertThat(Files.size(file)).isEqualTo(0L);
+                    assertThat(Files.isSameFile(file, file)).isTrue();
+                    assertThat(file.toString()).isEqualTo(testFilePath);
+                }
+
+                @Test
                 @Disabled
                 void shouldNotBeAbleToGetDosFilePermissions() {
                     assertThatThrownBy(() -> Files.getAttribute(file, "dos:readonly")).isInstanceOf(UnsupportedOperationException.class);
