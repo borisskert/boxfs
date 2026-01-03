@@ -109,6 +109,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
+        if (source.equals(target)) {
+            return;
+        }
+
         copy(source, target, options);
         delete(source);
     }
