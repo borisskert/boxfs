@@ -131,22 +131,22 @@ class BoxFsDrive implements BoxFsNode {
 
     @Override
     public boolean isDirectory() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return true;
     }
 
     @Override
     public boolean isDirectory(Path path) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return readNode(path).map(BoxFsNode::isDirectory).orElse(false);
     }
 
     @Override
     public boolean isFile() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return false;
     }
 
     @Override
     public boolean isFile(Path path) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return readNode(path).map(BoxFsNode::isFile).orElse(false);
     }
 
     @Override

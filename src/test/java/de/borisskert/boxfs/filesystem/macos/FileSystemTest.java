@@ -1116,6 +1116,335 @@ abstract class FileSystemTest {
                             assertThat(Files.size(fileInDir)).isEqualTo(0);
                         }
                     }
+
+                    @Nested
+                    class MoveDirectory {
+                        String targetDirPath = "/targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            targetFile = target.resolve("testfile.txt");
+
+                            Files.move(dir, target);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.move(target, dir);
+                        }
+
+                        @Test
+                        void shouldMoveDirectoryAndContentsToTarget() throws IOException {
+                            assertThat(Files.exists(target)).isTrue();
+                            assertThat(Files.isDirectory(target)).isTrue();
+                            assertThat(Files.isRegularFile(target)).isFalse();
+
+                            assertThat(Files.exists(targetFile)).isTrue();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isTrue();
+
+                            assertThat(Files.size(targetFile)).isEqualTo(12L);
+                            assertThat(Files.readAllBytes(targetFile)).isEqualTo("Hello World!".getBytes());
+                        }
+
+                        @Test
+                        void shouldRemoveDirectoryAndContentsFromSource() {
+                            assertThat(Files.exists(dir)).isFalse();
+                            assertThat(Files.isDirectory(dir)).isFalse();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isFalse();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+                    }
+
+                    @Nested
+                    class CreateSubDirectory {
+                        static final String SUBDIR_NAME = "subdir";
+                        Path subdir;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            subdir = dir.resolve(SUBDIR_NAME);
+                            Files.createDirectories(subdir);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            deleteRecursivelyIfExists(subdir);
+                        }
+
+                        @Test
+                        void shouldCreateSubDirectory() throws IOException {
+                            assertThat(Files.exists(subdir)).isTrue();
+                            assertThat(Files.isDirectory(subdir)).isTrue();
+                            assertThat(Files.notExists(subdir)).isFalse();
+                            assertThat(Files.isRegularFile(subdir)).isFalse();
+                            assertThat(Files.isHidden(subdir)).isFalse();
+                            assertThat(Files.isSymbolicLink(subdir)).isFalse();
+                            assertThat(Files.isReadable(subdir)).isTrue();
+                            assertThat(Files.isWritable(subdir)).isTrue();
+                            assertThat(Files.isExecutable(subdir)).isTrue();
+                        }
+
+                        @Nested
+                        class CreateFileInSubDirectory {
+                            static final String FIRST_FILE_IN_SUBDIR_NAME = "first_testfile.txt";
+                            Path fileInSubdir;
+
+                            @BeforeEach
+                            void setup() throws IOException {
+                                fileInSubdir = subdir.resolve(FIRST_FILE_IN_SUBDIR_NAME);
+                                Files.write(fileInSubdir, "Hello World! (1)".getBytes());
+                            }
+
+                            @AfterEach
+                            void teardown() throws IOException {
+                                deleteRecursivelyIfExists(fileInSubdir);
+                            }
+
+                            @Test
+                            void shouldCreateFileInSubDirectory() throws IOException {
+                                assertThat(Files.exists(fileInSubdir)).isTrue();
+                                assertThat(Files.isRegularFile(fileInSubdir)).isTrue();
+                                assertThat(Files.size(fileInSubdir)).isEqualTo(16L);
+                                assertThat(Files.readAllBytes(fileInSubdir)).isEqualTo("Hello World! (1)".getBytes());
+                            }
+
+                            @Nested
+                            class CreateSecondFileInSubDirectory {
+                                static final String SECOND_TESTFILE_IN_SUBDIR_NAME = "second_testfile.txt";
+                                Path secondFileInSubdir;
+
+                                @BeforeEach
+                                void setup() throws IOException {
+                                    secondFileInSubdir = subdir.resolve(SECOND_TESTFILE_IN_SUBDIR_NAME);
+                                    Files.write(secondFileInSubdir, "Hello World! (2)".getBytes());
+                                }
+
+                                @AfterEach
+                                void teardown() throws IOException {
+                                    deleteRecursivelyIfExists(secondFileInSubdir);
+                                }
+
+                                @Test
+                                void shouldCreateSecondFileInSubDirectory() throws IOException {
+                                    assertThat(Files.exists(secondFileInSubdir)).isTrue();
+                                    assertThat(Files.isRegularFile(secondFileInSubdir)).isTrue();
+                                    assertThat(Files.size(secondFileInSubdir)).isEqualTo(16L);
+                                }
+
+                                @Nested
+                                class MoveParentDirectoryToAbsolutePath {
+                                    String targetDirPath = "/targetdir";
+                                    Path target;
+
+                                    @BeforeEach
+                                    void setup() throws IOException {
+                                        target = fs.getPath(targetDirPath);
+                                        Files.move(dir, target);
+                                    }
+
+                                    @AfterEach
+                                    void teardown() throws IOException {
+                                        Files.move(target, dir);
+                                    }
+
+                                    @Test
+                                    void shouldMoveParentDirectoryToTarget() throws IOException {
+                                        assertThat(Files.exists(target)).isTrue();
+                                        assertThat(Files.isDirectory(target)).isTrue();
+                                        assertThat(Files.isRegularFile(target)).isFalse();
+
+                                        Path targetSubdir = target.resolve(SUBDIR_NAME);
+                                        assertThat(Files.exists(targetSubdir)).isTrue();
+                                        assertThat(Files.isDirectory(targetSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(targetSubdir)).isFalse();
+
+                                        Path firstTargetFileInSubdir = targetSubdir.resolve(FIRST_FILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(firstTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(firstTargetFileInSubdir)).isEqualTo("Hello World! (1)".getBytes());
+
+                                        Path secondTargetFileInSubdir = targetSubdir.resolve(SECOND_TESTFILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(secondTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(secondTargetFileInSubdir)).isEqualTo("Hello World! (2)".getBytes());
+                                    }
+
+                                    @Test
+                                    void shouldRemoveDirectoriesAndFilesFromSource() {
+                                        assertThat(Files.exists(dir)).isFalse();
+                                        assertThat(Files.isDirectory(dir)).isFalse();
+                                        assertThat(Files.isRegularFile(dir)).isFalse();
+
+                                        assertThat(Files.exists(subdir)).isFalse();
+                                        assertThat(Files.isDirectory(subdir)).isFalse();
+                                        assertThat(Files.isRegularFile(subdir)).isFalse();
+
+                                        assertThat(Files.exists(fileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(fileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(fileInSubdir)).isFalse();
+
+                                        assertThat(Files.exists(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(secondFileInSubdir)).isFalse();
+                                    }
+                                }
+
+                                @Nested
+                                class MoveParentDirectoryToRelativePath {
+                                    String targetDirPath = "targetdir";
+                                    Path target;
+
+                                    @BeforeEach
+                                    void setup() throws IOException {
+                                        target = fs.getPath(targetDirPath);
+                                        Files.move(dir, target);
+                                    }
+
+                                    @AfterEach
+                                    void teardown() throws IOException {
+                                        Files.move(target, dir);
+                                    }
+
+                                    @Test
+                                    void shouldMoveParentDirectoryToTarget() throws IOException {
+                                        assertThat(Files.exists(target)).isTrue();
+                                        assertThat(Files.isDirectory(target)).isTrue();
+                                        assertThat(Files.isRegularFile(target)).isFalse();
+
+                                        Path targetSubdir = target.resolve(SUBDIR_NAME);
+                                        assertThat(Files.exists(targetSubdir)).isTrue();
+                                        assertThat(Files.isDirectory(targetSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(targetSubdir)).isFalse();
+
+                                        Path firstTargetFileInSubdir = targetSubdir.resolve(FIRST_FILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(firstTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(firstTargetFileInSubdir)).isEqualTo("Hello World! (1)".getBytes());
+
+                                        Path secondTargetFileInSubdir = targetSubdir.resolve(SECOND_TESTFILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(secondTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(secondTargetFileInSubdir)).isEqualTo("Hello World! (2)".getBytes());
+                                    }
+
+                                    @Test
+                                    void shouldRemoveDirectoriesAndFilesFromSource() {
+                                        assertThat(Files.exists(dir)).isFalse();
+                                        assertThat(Files.isDirectory(dir)).isFalse();
+                                        assertThat(Files.isRegularFile(dir)).isFalse();
+
+                                        assertThat(Files.exists(subdir)).isFalse();
+                                        assertThat(Files.isDirectory(subdir)).isFalse();
+                                        assertThat(Files.isRegularFile(subdir)).isFalse();
+
+                                        assertThat(Files.exists(fileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(fileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(fileInSubdir)).isFalse();
+
+                                        assertThat(Files.exists(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(secondFileInSubdir)).isFalse();
+                                    }
+                                }
+
+                                @Test
+                                void shouldFailToMoveIfTargetExists() throws IOException {
+                                    Path target = fs.getPath("/targetdir");
+                                    Files.createDirectories(target);
+
+                                    assertThatThrownBy(() -> Files.move(dir, target))
+                                            .isInstanceOf(FileAlreadyExistsException.class);
+                                }
+
+                                @Test
+                                void shouldFailToMoveIfTargetIsNotEmpty() throws IOException {
+                                    Path target = fs.getPath("/targetdir");
+                                    Path targetSubdir = target.resolve(SUBDIR_NAME);
+
+                                    Files.createDirectories(target);
+                                    Files.createDirectories(targetSubdir);
+
+                                    assertThatThrownBy(() -> Files.move(dir, target, REPLACE_EXISTING))
+                                            .isInstanceOf(DirectoryNotEmptyException.class);
+                                }
+
+                                @Nested
+                                class MoveParentDirectoryToExistingTarget {
+                                    String targetDirPath = "/targetdir";
+                                    Path target;
+
+                                    @BeforeEach
+                                    void setup() throws IOException {
+                                        target = fs.getPath(targetDirPath);
+                                        Files.createDirectories(target);
+
+                                        Files.move(dir, target, REPLACE_EXISTING);
+                                    }
+
+                                    @AfterEach
+                                    void teardown() throws IOException {
+                                        Files.move(target, dir);
+                                    }
+
+                                    @Test
+                                    void shouldMoveParentDirectoryToTarget() throws IOException {
+                                        assertThat(Files.exists(target)).isTrue();
+                                        assertThat(Files.isDirectory(target)).isTrue();
+                                        assertThat(Files.isRegularFile(target)).isFalse();
+
+                                        Path targetSubdir = target.resolve(SUBDIR_NAME);
+                                        assertThat(Files.exists(targetSubdir)).isTrue();
+                                        assertThat(Files.isDirectory(targetSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(targetSubdir)).isFalse();
+
+                                        Path firstTargetFileInSubdir = targetSubdir.resolve(FIRST_FILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(firstTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(firstTargetFileInSubdir)).isEqualTo("Hello World! (1)".getBytes());
+
+                                        Path secondTargetFileInSubdir = targetSubdir.resolve(SECOND_TESTFILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(secondTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(secondTargetFileInSubdir)).isEqualTo("Hello World! (2)".getBytes());
+                                    }
+
+                                    @Test
+                                    void shouldRemoveDirectoriesAndFilesFromSource() {
+                                        assertThat(Files.exists(dir)).isFalse();
+                                        assertThat(Files.isDirectory(dir)).isFalse();
+                                        assertThat(Files.isRegularFile(dir)).isFalse();
+
+                                        assertThat(Files.exists(subdir)).isFalse();
+                                        assertThat(Files.isDirectory(subdir)).isFalse();
+                                        assertThat(Files.isRegularFile(subdir)).isFalse();
+
+                                        assertThat(Files.exists(fileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(fileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(fileInSubdir)).isFalse();
+
+                                        assertThat(Files.exists(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(secondFileInSubdir)).isFalse();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 @Nested
