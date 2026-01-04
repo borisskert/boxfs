@@ -786,6 +786,14 @@ abstract class FileSystemTest {
                         assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
                         assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
+
+                    @Test
+                    void shouldMoveFileAtomics() throws IOException {
+                        Files.move(file, secondFile, StandardCopyOption.ATOMIC_MOVE);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.exists(file)).isFalse();
+                    }
                 }
             }
         }
@@ -1131,6 +1139,55 @@ abstract class FileSystemTest {
                             targetFile = target.resolve("testfile.txt");
 
                             Files.move(dir, target);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.move(target, dir);
+                        }
+
+                        @Test
+                        void shouldMoveDirectoryAndContentsToTarget() throws IOException {
+                            assertThat(Files.exists(target)).isTrue();
+                            assertThat(Files.isDirectory(target)).isTrue();
+                            assertThat(Files.isRegularFile(target)).isFalse();
+
+                            assertThat(Files.exists(targetFile)).isTrue();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isTrue();
+
+                            assertThat(Files.size(targetFile)).isEqualTo(12L);
+                            assertThat(Files.readAllBytes(targetFile)).isEqualTo("Hello World!".getBytes());
+                        }
+
+                        @Test
+                        void shouldRemoveDirectoryAndContentsFromSource() {
+                            assertThat(Files.exists(dir)).isFalse();
+                            assertThat(Files.isDirectory(dir)).isFalse();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isFalse();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+                    }
+
+                    @Nested
+                    class MoveDirectoryAtomic {
+                        String targetDirPath = "/targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            Files.createDirectories(target);
+
+                            targetFile = target.resolve("testfile.txt");
+
+                            Files.move(dir, target, StandardCopyOption.ATOMIC_MOVE);
                         }
 
                         @AfterEach
