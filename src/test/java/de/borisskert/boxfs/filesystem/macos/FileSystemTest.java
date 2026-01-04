@@ -1361,6 +1361,14 @@ abstract class FileSystemTest {
                                 }
 
                                 @Test
+                                void shouldFailToMoveIfNestedTargetDoesNotExist() throws IOException {
+                                    Path target = fs.getPath("/nested/targetdir");
+
+                                    assertThatThrownBy(() -> Files.move(dir, target))
+                                            .isInstanceOf(NoSuchFileException.class);
+                                }
+
+                                @Test
                                 void shouldFailToMoveIfTargetExists() throws IOException {
                                     Path target = fs.getPath("/targetdir");
                                     Files.createDirectories(target);
