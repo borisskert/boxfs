@@ -16,7 +16,7 @@ class BoxFsDirectory implements BoxFsNode {
 
     private final BoxFsFileSystem fileSystem;
     private final BoxFsDirectory parent;
-    private final String name;
+    private String name;
     private final Map<BoxFsFileName, BoxFsNode> children = new ConcurrentHashMap<>();
 
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
@@ -208,6 +208,32 @@ class BoxFsDirectory implements BoxFsNode {
     @Override
     public Optional<BoxFsNode> parent() {
         return Optional.ofNullable(parent);
+    }
+
+    @Override
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        if (source.getNameCount() == 1) {
+            BoxFsFileName sourceFileName = BoxFsFileName.of(source.getName(0).toString());
+            BoxFsFileName targetFileName = BoxFsFileName.of(target.getName(0).toString());
+
+            BoxFsNode node = children.remove(sourceFileName);
+            node.rename(targetFileName.name());
+
+            children.put(targetFileName, node);
+        } else {
+            BoxFsFileName childName = BoxFsFileName.of(source.getName(0).toString());
+            BoxFsNode nextDirectory = children.get(childName);
+
+            nextDirectory.rename(
+                    source.subpath(1, source.getNameCount()),
+                    target.subpath(1, target.getNameCount())
+            );
+        }
     }
 
     @Override

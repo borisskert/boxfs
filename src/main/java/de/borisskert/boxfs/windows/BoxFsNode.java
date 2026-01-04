@@ -46,4 +46,8 @@ interface BoxFsNode {
     BoxFsPath path();
 
     Iterable<Path> rootDirectories();
+
+    void rename(String newName);
+
+    void rename(Path source, Path target) throws IOException;
 }

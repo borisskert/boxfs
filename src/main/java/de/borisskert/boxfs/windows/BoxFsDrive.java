@@ -221,6 +221,34 @@ class BoxFsDrive implements BoxFsNode {
     }
 
     @Override
+    public void rename(String newName) {
+        throw new UnsupportedOperationException("Cannot rename the drive root");
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        if (source.getNameCount() < 1) {
+            return;
+        }
+
+        BoxFsFileName sourceName = BoxFsFileName.of(source.getName(0).toString());
+
+        if (source.getNameCount() == 1) {
+            BoxFsNode node = children.remove(sourceName);
+            if (node != null) {
+                String targetName = target.getFileName().toString();
+                node.rename(targetName);
+                children.put(BoxFsFileName.of(targetName), node);
+            }
+        } else {
+            children.get(sourceName).rename(
+                    source.subpath(1, source.getNameCount()),
+                    target
+            );
+        }
+    }
+
+    @Override
     public BoxFsPath path() {
         String path = driveLetter + ":\\";
         return new BoxFsPath(fileSystem, path);

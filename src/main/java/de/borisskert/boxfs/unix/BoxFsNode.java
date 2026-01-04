@@ -42,6 +42,9 @@ interface BoxFsNode {
     Collection<String> children();
 
     Optional<BoxFsNode> parent();
-
     BoxFsPath path();
+
+    void rename(String newName);
+
+    void rename(Path source, Path target) throws IOException;
 }

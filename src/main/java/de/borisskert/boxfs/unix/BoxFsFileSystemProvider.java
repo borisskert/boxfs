@@ -113,9 +113,32 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
+        if (!fileTree.exists(source)) {
+            throw new NoSuchFileException(source.toString());
+        }
+
         Path targetParent = target.getParent();
         if (targetParent != null && !fileTree.exists(targetParent)) {
             throw new NoSuchFileException(targetParent.toString());
+        }
+
+        if (Objects.equals(source.getParent(), target.getParent())) {
+            boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+
+            if (fileTree.exists(target)) {
+                if (replaceExisting) {
+                    if (fileTree.isDirectory(target) && hasChildren(target)) {
+                        throw new DirectoryNotEmptyException(target.toString());
+                    }
+
+                    deleteRecursively(target);
+                } else {
+                    throw new FileAlreadyExistsException(target.toString());
+                }
+            }
+
+            fileTree.rename(source, target);
+            return;
         }
 
         moveRecursively(source, target, options);

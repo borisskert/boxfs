@@ -10,8 +10,7 @@ import java.util.Optional;
 
 class BoxFsFile implements BoxFsNode {
     private byte[] content = new byte[0];
-
-    private final String name;
+    private String name;
     private final BoxFsDirectory parent;
     private final BoxFsFileSystem fileSystem;
     private final BoxFsFileAttributes attributes;
@@ -114,6 +113,16 @@ class BoxFsFile implements BoxFsNode {
     @Override
     public Optional<BoxFsNode> parent() {
         return Optional.of(parent);
+    }
+
+    @Override
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        throw new UnsupportedOperationException("Cannot rename a file inside a file");
     }
 
     @Override

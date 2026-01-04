@@ -177,6 +177,27 @@ class BoxFsTree implements BoxFsNode {
     }
 
     @Override
+    public void rename(String newName) {
+        throw new UnsupportedOperationException("Cannot rename the drive root");
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        Path absoluteSource = source.isAbsolute() ? source : source.toAbsolutePath();
+
+        findDrive(absoluteSource).ifPresent(drive -> {
+            try {
+                drive.rename(
+                        absoluteSource.subpath(0, absoluteSource.getNameCount()),
+                        target
+                );
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
     public Iterable<Path> rootDirectories() {
         return drives.values()
                 .stream()

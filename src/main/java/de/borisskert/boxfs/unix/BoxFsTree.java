@@ -118,6 +118,16 @@ class BoxFsTree implements BoxFsNode {
         return fileSystem.root();
     }
 
+    @Override
+    public void rename(String newName) {
+        throw new UnsupportedOperationException("Cannot rename the root directory");
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        rootDirectory.rename(source, target);
+    }
+
     private static boolean isRoot(Path path) {
         return path.isAbsolute() && path.getNameCount() < 1;
     }
