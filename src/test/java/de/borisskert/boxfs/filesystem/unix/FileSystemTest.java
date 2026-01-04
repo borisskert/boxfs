@@ -1251,8 +1251,68 @@ abstract class FileSystemTest {
                                 }
 
                                 @Nested
-                                class MoveParentDirectory {
+                                class MoveParentDirectoryToAbsolutePath {
                                     String targetDirPath = "/targetdir";
+                                    Path target;
+
+                                    @BeforeEach
+                                    void setup() throws IOException {
+                                        target = fs.getPath(targetDirPath);
+                                        Files.move(dir, target);
+                                    }
+
+                                    @AfterEach
+                                    void teardown() throws IOException {
+                                        Files.move(target, dir);
+                                    }
+
+                                    @Test
+                                    void shouldMoveParentDirectoryToTarget() throws IOException {
+                                        assertThat(Files.exists(target)).isTrue();
+                                        assertThat(Files.isDirectory(target)).isTrue();
+                                        assertThat(Files.isRegularFile(target)).isFalse();
+
+                                        Path targetSubdir = target.resolve(SUBDIR_NAME);
+                                        assertThat(Files.exists(targetSubdir)).isTrue();
+                                        assertThat(Files.isDirectory(targetSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(targetSubdir)).isFalse();
+
+                                        Path firstTargetFileInSubdir = targetSubdir.resolve(FIRST_FILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(firstTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(firstTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(firstTargetFileInSubdir)).isEqualTo("Hello World! (1)".getBytes());
+
+                                        Path secondTargetFileInSubdir = targetSubdir.resolve(SECOND_TESTFILE_IN_SUBDIR_NAME);
+                                        assertThat(Files.exists(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.isRegularFile(secondTargetFileInSubdir)).isTrue();
+                                        assertThat(Files.size(secondTargetFileInSubdir)).isEqualTo(16L);
+                                        assertThat(Files.readAllBytes(secondTargetFileInSubdir)).isEqualTo("Hello World! (2)".getBytes());
+                                    }
+
+                                    @Test
+                                    void shouldRemoveDirectoriesAndFilesFromSource() {
+                                        assertThat(Files.exists(dir)).isFalse();
+                                        assertThat(Files.isDirectory(dir)).isFalse();
+                                        assertThat(Files.isRegularFile(dir)).isFalse();
+
+                                        assertThat(Files.exists(subdir)).isFalse();
+                                        assertThat(Files.isDirectory(subdir)).isFalse();
+                                        assertThat(Files.isRegularFile(subdir)).isFalse();
+
+                                        assertThat(Files.exists(fileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(fileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(fileInSubdir)).isFalse();
+
+                                        assertThat(Files.exists(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isDirectory(secondFileInSubdir)).isFalse();
+                                        assertThat(Files.isRegularFile(secondFileInSubdir)).isFalse();
+                                    }
+                                }
+
+                                @Nested
+                                class MoveParentDirectoryToRelativePath {
+                                    String targetDirPath = "targetdir";
                                     Path target;
 
                                     @BeforeEach
