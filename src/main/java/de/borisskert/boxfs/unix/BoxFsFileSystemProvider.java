@@ -127,6 +127,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
         if (node.get().attributes().isDirectory()) {
             if (fileTree.exists(target)) {
                 if (replaceExisting) {
+                    if (fileTree.isDirectory(target) && hasChildren(target)) {
+                        throw new DirectoryNotEmptyException(target.toString());
+                    }
+
                     deleteRecursively(target);
                 } else {
                     throw new FileAlreadyExistsException(target.toString());
@@ -156,6 +160,12 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             }
         }
         delete(path);
+    }
+
+    private boolean hasChildren(Path path) throws IOException {
+        try (DirectoryStream<Path> stream = newDirectoryStream(path, entry -> true)) {
+            return stream.iterator().hasNext();
+        }
     }
 
     @Override
