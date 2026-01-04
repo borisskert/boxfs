@@ -127,11 +127,15 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new NoSuchFileException(targetParent.toString());
         }
 
-        if (Objects.equals(source.getParent(), target.getParent())) {
-            boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
+        CopyOptions copyOptions = CopyOptions.of(options);
 
+        if (Objects.equals(source.getParent(), target.getParent())) {
             if (fileTree.exists(target)) {
-                if (replaceExisting) {
+                if (copyOptions.replaceExisting() || copyOptions.atomicMove()) {
+                    if (fileTree.isDirectory(source) && copyOptions.atomicMove()) {
+                        throw new AccessDeniedException(source.toString(), target.toString(), "Atomic move of a directory is not supported if target exists");
+                    }
+
                     if (fileTree.isDirectory(target) && hasChildren(target)) {
                         throw new DirectoryNotEmptyException(target.toString());
                     }
@@ -146,20 +150,22 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
-        moveRecursively(source, target, options);
+        if (copyOptions.atomicMove()) {
+            throw new AccessDeniedException(source.toString(), target.toString(), "Atomic move between different parents is not supported");
+        }
+
+        moveRecursively(source, target, copyOptions);
     }
 
-    private void moveRecursively(Path source, Path target, CopyOption... options) throws IOException {
+    private void moveRecursively(Path source, Path target, CopyOptions options) throws IOException {
         Optional<BoxFsNode> node = fileTree.readNode(source);
         if (!node.isPresent()) {
             throw new NoSuchFileException(source.toString());
         }
 
-        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
-
         if (node.get().attributes().isDirectory()) {
             if (fileTree.exists(target)) {
-                if (replaceExisting) {
+                if (options.replaceExisting()) {
                     if (fileTree.isDirectory(target) && hasChildren(target)) {
                         throw new DirectoryNotEmptyException(target.toString());
                     }
@@ -178,7 +184,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
                 }
             }
         } else {
-            copy(source, target, options);
+            copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
 
         delete(source);

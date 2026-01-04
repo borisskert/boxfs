@@ -743,6 +743,14 @@ abstract class FileSystemTest {
                         assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
                         assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
+
+                    @Test
+                    void shouldMoveFileAtomics() throws IOException {
+                        Files.move(file, secondFile, StandardCopyOption.ATOMIC_MOVE);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.exists(file)).isFalse();
+                    }
                 }
             }
         }
@@ -1121,6 +1129,48 @@ abstract class FileSystemTest {
                             assertThat(Files.exists(fileInDir)).isFalse();
                             assertThat(Files.isDirectory(fileInDir)).isFalse();
                             assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+                    }
+
+                    @Nested
+                    class MoveDirectoryAtomic {
+                        String targetDirPath = "C:\\targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            Files.createDirectories(target);
+
+                            targetFile = target.resolve("testfile.txt");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.deleteIfExists(target);
+                        }
+
+                        @Test
+                        void shouldFailToMoveDirectoryAtomic() {
+                            assertThatThrownBy(() -> Files.move(dir, target, StandardCopyOption.ATOMIC_MOVE))
+                                    .isInstanceOf(AccessDeniedException.class);
+
+                            // target hasn't been created
+                            assertThat(Files.exists(targetFile)).isFalse();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isFalse();
+
+                            // source still exists
+                            assertThat(Files.exists(dir)).isTrue();
+                            assertThat(Files.isDirectory(dir)).isTrue();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isTrue();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isTrue();
                         }
                     }
 
