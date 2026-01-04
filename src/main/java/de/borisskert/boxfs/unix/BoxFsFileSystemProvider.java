@@ -113,6 +113,11 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
+        Path targetParent = target.getParent();
+        if (targetParent != null && !fileTree.exists(targetParent)) {
+            throw new NoSuchFileException(targetParent.toString());
+        }
+
         moveRecursively(source, target, options);
     }
 
