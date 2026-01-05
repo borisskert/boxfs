@@ -4,6 +4,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -427,26 +428,36 @@ abstract class FileSystemTest {
                 @Nested
                 class MoveFileToAbsoluteSimpleTarget {
                     private Path target;
+                    private Object originalFileKey;
 
                     @BeforeEach
                     void setup() throws IOException {
                         target = fs.getPath("/target.txt");
+                        originalFileKey = Files.readAttributes(file, BasicFileAttributes.class).fileKey();
+
                         Files.write(file, "Hello World!".getBytes());
+
+                        Files.move(file, target);
                     }
 
                     @AfterEach
                     void teardown() throws IOException {
-                        Files.deleteIfExists(target);
+                        Files.move(target, file);
                     }
 
                     @Test
                     void shouldMoveFile() throws IOException {
-                        Files.move(file, target);
-
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
 
                         assertThat(Files.exists(file)).isFalse();
+                    }
+
+                    @Test
+                    @DisplayName("should preserve fileKey of after move within same filesystem")
+                    void shouldPreserveFileKey() throws IOException {
+                        Object newFileKey = Files.readAttributes(target, BasicFileAttributes.class).fileKey();
+                        assertThat(newFileKey).isEqualTo(originalFileKey);
                     }
                 }
 
@@ -1131,12 +1142,18 @@ abstract class FileSystemTest {
                         Path target;
                         Path targetFile;
 
+                        Object originalDirKey;
+                        Object originalFileKey;
+
                         @BeforeEach
                         void setup() throws IOException {
                             Files.write(fileInDir, "Hello World!".getBytes());
 
                             target = fs.getPath(targetDirPath);
                             targetFile = target.resolve("testfile.txt");
+
+                            originalDirKey = Files.readAttributes(dir, BasicFileAttributes.class).fileKey();
+                            originalFileKey = Files.readAttributes(fileInDir, BasicFileAttributes.class).fileKey();
 
                             Files.move(dir, target);
                         }
@@ -1170,6 +1187,16 @@ abstract class FileSystemTest {
                             assertThat(Files.isDirectory(fileInDir)).isFalse();
                             assertThat(Files.isRegularFile(fileInDir)).isFalse();
                         }
+
+                        @Test
+                        @DisplayName("should preserve fileKey of directory and its content after move within same filesystem")
+                        void shouldPreserveFileKey() throws IOException {
+                            Object newDirKey = Files.readAttributes(target, BasicFileAttributes.class).fileKey();
+                            Object newFileKey = Files.readAttributes(targetFile, BasicFileAttributes.class).fileKey();
+
+                            assertThat(newDirKey).isEqualTo(originalDirKey);
+                            assertThat(newFileKey).isEqualTo(originalFileKey);
+                        }
                     }
 
                     @Nested
@@ -1178,9 +1205,15 @@ abstract class FileSystemTest {
                         Path target;
                         Path targetFile;
 
+                        Object originalDirKey;
+                        Object originalFileKey;
+
                         @BeforeEach
                         void setup() throws IOException {
                             Files.write(fileInDir, "Hello World!".getBytes());
+
+                            originalDirKey = Files.readAttributes(dir, BasicFileAttributes.class).fileKey();
+                            originalFileKey = Files.readAttributes(fileInDir, BasicFileAttributes.class).fileKey();
 
                             target = fs.getPath(targetDirPath);
                             Files.createDirectories(target);
@@ -1218,6 +1251,16 @@ abstract class FileSystemTest {
                             assertThat(Files.exists(fileInDir)).isFalse();
                             assertThat(Files.isDirectory(fileInDir)).isFalse();
                             assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+
+                        @Test
+                        @DisplayName("should preserve fileKey of directory and its content after atomic move")
+                        void shouldPreserveFileKey() throws IOException {
+                            Object newDirKey = Files.readAttributes(target, BasicFileAttributes.class).fileKey();
+                            Object newFileKey = Files.readAttributes(targetFile, BasicFileAttributes.class).fileKey();
+
+                            assertThat(newDirKey).isEqualTo(originalDirKey);
+                            assertThat(newFileKey).isEqualTo(originalFileKey);
                         }
                     }
 

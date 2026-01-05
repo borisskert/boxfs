@@ -13,7 +13,7 @@ public class BoxFsFileSystem extends FileSystem {
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
     private final BoxFsNode fileTree = BoxFsNode.newTree(this);
-    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(fileTree, SEPARATOR);
+    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(fileTree);
     private final BoxFsPath rootPath = new BoxFsRootPath(this);
 
 

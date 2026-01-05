@@ -128,6 +128,11 @@ class BoxFsTree implements BoxFsNode {
         rootDirectory.rename(source, target);
     }
 
+    @Override
+    public void move(Path source, Path target) throws IOException {
+        rootDirectory.move(source, target);
+    }
+
     private static boolean isRoot(Path path) {
         return path.isAbsolute() && path.getNameCount() < 1;
     }

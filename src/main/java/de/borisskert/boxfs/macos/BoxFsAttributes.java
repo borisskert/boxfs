@@ -20,4 +20,9 @@ abstract class BoxFsAttributes implements PosixFileAttributes {
     public void setPermissions(Set<PosixFilePermission> permissions) {
         this.permissions.set(permissions);
     }
+
+    @Override
+    public Object fileKey() {
+        return System.identityHashCode(this);
+    }
 }

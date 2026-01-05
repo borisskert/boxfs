@@ -12,7 +12,7 @@ class BoxFsFile implements BoxFsNode {
     private byte[] content = new byte[0];
 
     private String name;
-    private final BoxFsDirectory parent;
+    private BoxFsDirectory parent;
     private final BoxFsFileSystem fileSystem;
     private final BoxFsFileAttributes attributes;
     private final BoxFsFileAttributeView view;
@@ -23,6 +23,10 @@ class BoxFsFile implements BoxFsNode {
         this.fileSystem = fileSystem;
         this.attributes = new BoxFsFileAttributes(() -> (long) content.length);
         this.view = new BoxFsFileAttributeView(this.attributes);
+    }
+
+    void setParent(BoxFsDirectory parent) {
+        this.parent = parent;
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -124,6 +128,11 @@ class BoxFsFile implements BoxFsNode {
     @Override
     public void rename(Path source, Path target) throws IOException {
         throw new UnsupportedOperationException("Cannot rename a file inside a file");
+    }
+
+    @Override
+    public void move(Path source, Path target) throws IOException {
+        throw new UnsupportedOperationException("Cannot move a file inside a file");
     }
 
     @Override

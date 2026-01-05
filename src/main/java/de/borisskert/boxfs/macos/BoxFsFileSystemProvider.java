@@ -17,7 +17,7 @@ import java.util.*;
 class BoxFsFileSystemProvider extends FileSystemProvider {
     private final BoxFsNode fileTree;
 
-    BoxFsFileSystemProvider(BoxFsNode fileTree, String separator) {
+    BoxFsFileSystemProvider(BoxFsNode fileTree) {
         this.fileTree = fileTree;
     }
 
@@ -122,67 +122,19 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
         CopyOptions copyOptions = CopyOptions.of(options);
 
-        if (Objects.equals(source.getParent(), target.getParent())) {
-            if (fileTree.exists(target)) {
-                if (copyOptions.replaceExisting() || copyOptions.atomicMove()) {
-                    if (fileTree.isDirectory(target) && hasChildren(target)) {
-                        throw new DirectoryNotEmptyException(target.toString());
-                    }
-
-                    deleteRecursively(target);
-                } else {
-                    throw new FileAlreadyExistsException(target.toString());
-                }
-            }
-
-            fileTree.rename(source, target);
-            return;
-        }
-
-        if (copyOptions.atomicMove()) {
-            if (fileTree.exists(target)) {
+        if (fileTree.exists(target)) {
+            if (copyOptions.replaceExisting() || copyOptions.atomicMove()) {
                 if (fileTree.isDirectory(target) && hasChildren(target)) {
                     throw new DirectoryNotEmptyException(target.toString());
                 }
 
                 deleteRecursively(target);
+            } else {
+                throw new FileAlreadyExistsException(target.toString());
             }
         }
 
-        moveRecursively(source, target, copyOptions);
-    }
-
-    private void moveRecursively(Path source, Path target, CopyOptions options) throws IOException {
-        Optional<BoxFsNode> node = fileTree.readNode(source);
-        if (!node.isPresent()) {
-            throw new NoSuchFileException(source.toString());
-        }
-
-        if (node.get().attributes().isDirectory()) {
-            if (fileTree.exists(target)) {
-                if (options.replaceExisting()) {
-                    if (fileTree.isDirectory(target) && hasChildren(target)) {
-                        throw new DirectoryNotEmptyException(target.toString());
-                    }
-
-                    deleteRecursively(target);
-                } else {
-                    throw new FileAlreadyExistsException(target.toString());
-                }
-            }
-
-            fileTree.createDirectory(target);
-            try (DirectoryStream<Path> stream = newDirectoryStream(source, entry -> true)) {
-                for (Path entry : stream) {
-                    Path targetEntry = target.resolve(entry.getFileName().toString());
-                    moveRecursively(entry, targetEntry, options);
-                }
-            }
-        } else {
-            copy(source, target, options);
-        }
-
-        delete(source);
+        fileTree.move(source, target);
     }
 
     private void deleteRecursively(Path path) throws IOException {

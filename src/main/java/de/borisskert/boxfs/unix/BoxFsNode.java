@@ -42,6 +42,7 @@ interface BoxFsNode {
     Collection<String> children();
 
     Optional<BoxFsNode> parent();
+
     BoxFsPath path();
 
     void rename(String newName);
