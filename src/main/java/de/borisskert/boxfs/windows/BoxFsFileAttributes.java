@@ -53,6 +53,6 @@ class BoxFsFileAttributes extends BoxFsAttributes {
 
     @Override
     public Object fileKey() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return null;
     }
 }

@@ -55,7 +55,7 @@ abstract class BoxFsAttributes implements BasicFileAttributes {
 
     @Override
     public Object fileKey() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return null;
     }
 
     public BoxFsBasicAttributesMap toMap() {
@@ -67,6 +67,10 @@ abstract class BoxFsAttributes implements BasicFileAttributes {
     }
 
     public void checkAccess(AccessMode[] modes) throws AccessDeniedException {
+        if (this.isDirectory()) {
+            return;
+        }
+
         for (AccessMode mode : modes) {
             if (mode == AccessMode.WRITE && this.isReadonly()) {
                 throw new AccessDeniedException("Not allowed due to read-only attribute");

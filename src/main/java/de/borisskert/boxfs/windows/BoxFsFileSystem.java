@@ -11,10 +11,17 @@ public class BoxFsFileSystem extends FileSystem {
     private static final String SEPARATOR = "\\";
 
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
-    private final BoxFsNode fileTree = BoxFsNode.newTree(this);
-    private final BoxFsFileSystemProvider provider = new BoxFsFileSystemProvider(fileTree, SEPARATOR);
+    private final BoxFsNode fileTree;
+    private final BoxFsFileSystemProvider provider;
     private final BoxFsPath rootPath = new BoxFsRootPath(this);
 
+    private final java.util.Map<Path, Object> fileKeyRegistry = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong fileKeyGenerator = new java.util.concurrent.atomic.AtomicLong(0);
+
+    private BoxFsFileSystem() {
+        this.fileTree = BoxFsNode.newTree(this);
+        this.provider = new BoxFsFileSystemProvider(fileTree, SEPARATOR);
+    }
 
     @Override
     public FileSystemProvider provider() {
@@ -87,6 +94,25 @@ public class BoxFsFileSystem extends FileSystem {
 
     String separator() {
         return SEPARATOR;
+    }
+
+    public Object getOrCreateFileKey(Path path) {
+        return fileKeyRegistry.computeIfAbsent(path, p -> fileKeyGenerator.incrementAndGet());
+    }
+
+    public void moveFileKey(Path source, Path target) {
+        java.util.List<Path> keysToMove = fileKeyRegistry.keySet().stream()
+                .filter(p -> p.startsWith(source))
+                .collect(java.util.stream.Collectors.toList());
+
+        for (Path oldPath : keysToMove) {
+            Object key = fileKeyRegistry.remove(oldPath);
+            if (key != null) {
+                Path relative = source.relativize(oldPath);
+                Path newPath = target.resolve(relative);
+                fileKeyRegistry.put(newPath, key);
+            }
+        }
     }
 
     public static FileSystem create() {
