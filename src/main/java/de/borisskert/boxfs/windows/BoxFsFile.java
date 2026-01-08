@@ -11,18 +11,20 @@ import java.util.Optional;
 class BoxFsFile implements BoxFsNode {
     private byte[] content = new byte[0];
 
-    private final String name;
-    private final BoxFsNode parent;
+    private String name;
+    private BoxFsNode parent;
     private final BoxFsFileSystem fileSystem;
     private final BoxFsFileAttributes attributes;
     private final BoxFsFileAttributeView view;
+    private final Object fileKey;
 
     BoxFsFile(BoxFsFileSystem fileSystem, BoxFsNode parent, String name) {
         this.name = name;
         this.parent = parent;
         this.fileSystem = fileSystem;
+        this.fileKey = fileSystem.getOrCreateFileKey(path());
         this.attributes = new BoxFsFileAttributes(() -> (long) content.length);
-        this.view = new BoxFsFileAttributeView(this.attributes);
+        this.view = new BoxFsFileAttributeView(attributes());
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -117,15 +119,53 @@ class BoxFsFile implements BoxFsNode {
     }
 
     @Override
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        throw new UnsupportedOperationException("Cannot rename a file inside a file");
+    }
+
+    @Override
+    public Object fileKey() {
+        return fileKey;
+    }
+
+    @Override
+    public void move(Path source, Path target) throws IOException {
+        throw new UnsupportedOperationException("Cannot move a file inside a file");
+    }
+
+    @Override
+    public void putChild(BoxFsFileName name, BoxFsNode child) {
+        throw new UnsupportedOperationException("Cannot put a child into a file");
+    }
+
+    @Override
+    public void removeChild(BoxFsNode child) {
+        throw new UnsupportedOperationException("Cannot remove a child from a file");
+    }
+
+    @Override
     public BoxFsPath path() {
-        return new BoxFsPath(
-                parent.path().getFileSystem(),
-                parent.path().toString() + "/" + name
-        );
+        return parent.path().resolve(name);
     }
 
     @Override
     public Iterable<Path> rootDirectories() {
         throw new UnsupportedOperationException("Cannot get root directories of a file");
+    }
+
+    public void setParent(BoxFsNode parent) {
+        this.parent = parent;
+    }
+
+    @Override
+    public void removeFromParent() {
+        parent().ifPresent(parent -> {
+            parent.removeChild(this);
+        });
     }
 }

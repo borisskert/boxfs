@@ -233,7 +233,6 @@ abstract class FileSystemTest {
                     }
 
                     @Test
-                    @Disabled
                     void shouldThrowWhenCheckingForSameFileWhichDoesntExist() {
                         assertThatThrownBy(() -> Files.isSameFile(pathWithDifferentCase, file)).isInstanceOf(NoSuchFileException.class);
                     }
@@ -796,6 +795,14 @@ abstract class FileSystemTest {
                         assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
                         assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
+
+                    @Test
+                    void shouldMoveFileAtomics() throws IOException {
+                        Files.move(file, secondFile, StandardCopyOption.ATOMIC_MOVE);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.exists(file)).isFalse();
+                    }
                 }
             }
         }
@@ -1175,6 +1182,55 @@ abstract class FileSystemTest {
                     }
 
                     @Nested
+                    class MoveDirectoryAtomic {
+                        String targetDirPath = "/targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            Files.createDirectories(target);
+
+                            targetFile = target.resolve("testfile.txt");
+
+                            Files.move(dir, target, StandardCopyOption.ATOMIC_MOVE);
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.move(target, dir);
+                        }
+
+                        @Test
+                        void shouldMoveDirectoryAndContentsToTarget() throws IOException {
+                            assertThat(Files.exists(target)).isTrue();
+                            assertThat(Files.isDirectory(target)).isTrue();
+                            assertThat(Files.isRegularFile(target)).isFalse();
+
+                            assertThat(Files.exists(targetFile)).isTrue();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isTrue();
+
+                            assertThat(Files.size(targetFile)).isEqualTo(12L);
+                            assertThat(Files.readAllBytes(targetFile)).isEqualTo("Hello World!".getBytes());
+                        }
+
+                        @Test
+                        void shouldRemoveDirectoryAndContentsFromSource() {
+                            assertThat(Files.exists(dir)).isFalse();
+                            assertThat(Files.isDirectory(dir)).isFalse();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isFalse();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+                    }
+
+                    @Nested
                     class CreateSubDirectory {
                         static final String SUBDIR_NAME = "subdir";
                         Path subdir;
@@ -1370,6 +1426,13 @@ abstract class FileSystemTest {
                                     }
                                 }
 
+                                @Test
+                                void shouldFailToMoveIfNestedTargetDoesNotExist() {
+                                    Path target = fs.getPath("/nested/targetdir");
+
+                                    assertThatThrownBy(() -> Files.move(dir, target))
+                                            .isInstanceOf(NoSuchFileException.class);
+                                }
 
                                 @Test
                                 void shouldFailToMoveIfTargetExists() throws IOException {
@@ -1477,6 +1540,19 @@ abstract class FileSystemTest {
                     void shouldCopyDirectory() throws IOException {
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.isDirectory(target)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
+                    }
+
+                    @Test
+                    void shouldLeaveSourceDirectory() throws IOException {
+                        assertThat(Files.exists(dir)).isTrue();
+                        assertThat(Files.isDirectory(dir)).isTrue();
                         assertThat(Files.notExists(dir)).isFalse();
                         assertThat(Files.isRegularFile(dir)).isFalse();
                         assertThat(Files.isHidden(dir)).isFalse();
@@ -1506,13 +1582,13 @@ abstract class FileSystemTest {
                     void shouldCopyDirectory() throws IOException {
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.isDirectory(target)).isTrue();
-                        assertThat(Files.notExists(dir)).isFalse();
-                        assertThat(Files.isRegularFile(dir)).isFalse();
-                        assertThat(Files.isHidden(dir)).isFalse();
-                        assertThat(Files.isSymbolicLink(dir)).isFalse();
-                        assertThat(Files.isReadable(dir)).isTrue();
-                        assertThat(Files.isWritable(dir)).isTrue();
-                        assertThat(Files.isExecutable(dir)).isTrue();
+                        assertThat(Files.notExists(target)).isFalse();
+                        assertThat(Files.isRegularFile(target)).isFalse();
+                        assertThat(Files.isHidden(target)).isFalse();
+                        assertThat(Files.isSymbolicLink(target)).isFalse();
+                        assertThat(Files.isReadable(target)).isTrue();
+                        assertThat(Files.isWritable(target)).isTrue();
+                        assertThat(Files.isExecutable(target)).isTrue();
                     }
                 }
 
@@ -1689,13 +1765,13 @@ abstract class FileSystemTest {
                     @Test
                     void shouldFailWhenTryingToCopySecondDirectoryToOtherWithoutReplace() {
                         assertThatThrownBy(() -> Files.copy(secondDir, dir))
-                                .isInstanceOf(IOException.class);
+                                .isInstanceOf(FileAlreadyExistsException.class);
                     }
 
                     @Test
                     void shouldFailWhenTryingToCopyOtherDirectoryToSecondWithoutReplace() {
                         assertThatThrownBy(() -> Files.copy(dir, secondDir))
-                                .isInstanceOf(IOException.class);
+                                .isInstanceOf(FileAlreadyExistsException.class);
                     }
 
                     @Test

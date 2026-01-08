@@ -1,12 +1,10 @@
 package de.borisskert.boxfs.filesystem.windows;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 abstract class FileSystemTest {
 
     abstract FileSystem getFs() throws IOException;
+
+    abstract Class<? extends BasicFileAttributes> fileAttributesClassForDebug();
 
     private FileSystem fs;
 
@@ -108,6 +108,12 @@ abstract class FileSystemTest {
             }
 
             @Test
+            void shouldNotSupportFileKeys() {
+                assertThatThrownBy(() -> Files.readAttributes(file, BasicFileAttributes.class).fileKey())
+                        .isInstanceOf(NoSuchFileException.class);
+            }
+
+            @Test
             void shouldNotFindAnyFilesInRootDirectory() throws IOException {
                 try (DirectoryStream<Path> paths = Files.newDirectoryStream(root)) {
                     Iterator<Path> iterator = paths.iterator();
@@ -178,6 +184,11 @@ abstract class FileSystemTest {
                     assertThat(Files.isExecutable(file)).isTrue();
                     assertThat(Files.size(file)).isEqualTo(0);
                     assertThat(Files.isSameFile(file, file)).isTrue();
+                }
+
+                @Test
+                void shouldNotSupportFileKeys() throws IOException {
+                    assertThat(Files.readAttributes(file, BasicFileAttributes.class).fileKey()).isNull();
                 }
 
                 @Test
@@ -358,11 +369,15 @@ abstract class FileSystemTest {
                 @Nested
                 class CopyFileToAbsoluteSimpleTarget {
                     private Path target;
+                    private Object originalFileKey;
 
                     @BeforeEach
                     void setup() throws IOException {
                         target = fs.getPath("C:\\target.txt");
                         Files.write(file, "Hello World!".getBytes());
+                        originalFileKey = Files.readAttributes(file, fileAttributesClassForDebug()).fileKey();
+
+                        Files.copy(file, target);
                     }
 
                     @AfterEach
@@ -372,24 +387,36 @@ abstract class FileSystemTest {
 
                     @Test
                     void shouldCopyFile() throws IOException {
-                        Files.copy(file, target);
-
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
 
                         assertThat(Files.exists(file)).isTrue();
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                    }
+
+                    @Test
+                    void shouldCreateNewFileKey() throws IOException {
+                        Object newFileKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+
+                        assertThat(originalFileKey).isNotNull();
+                        assertThat(newFileKey).isNotNull();
+
+                        assertThat(newFileKey).isNotEqualTo(originalFileKey);
                     }
                 }
 
                 @Nested
                 class CopyFileToRelativeSimpleTarget {
                     private Path target;
+                    private Object originalFileKey;
 
                     @BeforeEach
                     void setup() throws IOException {
                         target = fs.getPath("target.txt");
                         Files.write(file, "Hello World!".getBytes());
+                        originalFileKey = Files.readAttributes(file, fileAttributesClassForDebug()).fileKey();
+
+                        Files.copy(file, target);
                     }
 
                     @AfterEach
@@ -399,13 +426,21 @@ abstract class FileSystemTest {
 
                     @Test
                     void shouldCopyFile() throws IOException {
-                        Files.copy(file, target);
-
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
 
                         assertThat(Files.exists(file)).isTrue();
                         assertThat(Files.readAllBytes(file)).isEqualTo("Hello World!".getBytes());
+                    }
+
+                    @Test
+                    void shouldCreateNewFileKey() throws IOException {
+                        Object newFileKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+
+                        assertThat(originalFileKey).isNotNull();
+                        assertThat(newFileKey).isNotNull();
+
+                        assertThat(newFileKey).isNotEqualTo(originalFileKey);
                     }
                 }
 
@@ -430,52 +465,79 @@ abstract class FileSystemTest {
                 @Nested
                 class MoveFileToAbsoluteSimpleTarget {
                     private Path target;
+                    private Object originalFileKey;
 
                     @BeforeEach
                     void setup() throws IOException {
                         target = fs.getPath("C:\\target.txt");
+                        originalFileKey = Files.readAttributes(file, fileAttributesClassForDebug()).fileKey();
+
                         Files.write(file, "Hello World!".getBytes());
+
+                        Files.move(file, target);
                     }
 
                     @AfterEach
                     void teardown() throws IOException {
-                        Files.deleteIfExists(target);
+                        Files.move(target, file);
                     }
 
                     @Test
                     void shouldMoveFile() throws IOException {
-                        Files.move(file, target);
-
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
 
                         assertThat(Files.exists(file)).isFalse();
+                    }
+
+                    @Test
+                    @DisplayName("should preserve fileKey of after move within same filesystem")
+                    void shouldPreserveFileKey() throws IOException {
+                        Object newFileKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+
+                        assertThat(originalFileKey).isNotNull();
+                        assertThat(newFileKey).isNotNull();
+
+                        assertThat(newFileKey).isEqualTo(originalFileKey);
                     }
                 }
 
                 @Nested
                 class MoveFileToRelativeSimpleTarget {
                     private Path target;
+                    private Object originalFileKey;
 
                     @BeforeEach
                     void setup() throws IOException {
                         target = fs.getPath("target.txt");
                         Files.write(file, "Hello World!".getBytes());
+                        originalFileKey = Files.readAttributes(file, fileAttributesClassForDebug()).fileKey();
+
+                        Files.move(file, target);
                     }
 
                     @AfterEach
                     void teardown() throws IOException {
-                        Files.deleteIfExists(target);
+                        Files.move(target, file);
                     }
 
                     @Test
                     void shouldMoveFile() throws IOException {
-                        Files.move(file, target);
-
                         assertThat(Files.exists(target)).isTrue();
                         assertThat(Files.readAllBytes(target)).isEqualTo("Hello World!".getBytes());
 
                         assertThat(Files.exists(file)).isFalse();
+                    }
+
+                    @Test
+                    @DisplayName("should preserve fileKey of after move within same filesystem")
+                    void shouldPreserveFileKey() throws IOException {
+                        Object newFileKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+
+                        assertThat(originalFileKey).isNotNull();
+                        assertThat(newFileKey).isNotNull();
+
+                        assertThat(newFileKey).isEqualTo(originalFileKey);
                     }
                 }
 
@@ -743,6 +805,14 @@ abstract class FileSystemTest {
                         assertThat(Files.isSameFile(secondFile, secondFile)).isTrue();
                         assertThat(secondFile.toString()).isEqualTo(secondFilePath);
                     }
+
+                    @Test
+                    void shouldMoveFileAtomics() throws IOException {
+                        Files.move(file, secondFile, StandardCopyOption.ATOMIC_MOVE);
+
+                        assertThat(Files.exists(secondFile)).isTrue();
+                        assertThat(Files.exists(file)).isFalse();
+                    }
                 }
             }
         }
@@ -770,6 +840,12 @@ abstract class FileSystemTest {
                 assertThat(Files.isExecutable(dir)).isFalse();
                 assertThat(Files.isSameFile(dir, dir)).isTrue();
                 assertThat(dir.toString()).isEqualTo(testDirPath);
+            }
+
+            @Test
+            void shouldNotSupportFileKeys() {
+                assertThatThrownBy(() -> Files.readAttributes(dir, BasicFileAttributes.class).fileKey())
+                        .isInstanceOf(NoSuchFileException.class);
             }
 
             @Test
@@ -823,6 +899,11 @@ abstract class FileSystemTest {
                     assertThat(Files.isReadable(dir)).isTrue();
                     assertThat(Files.isWritable(dir)).isTrue();
                     assertThat(Files.isExecutable(dir)).isTrue();
+                }
+
+                @Test
+                void shouldNotSupportFileKeys() throws IOException {
+                    assertThat(Files.readAttributes(dir, BasicFileAttributes.class).fileKey()).isNull();
                 }
 
                 @Test
@@ -1022,10 +1103,17 @@ abstract class FileSystemTest {
                     class CopyDirectory {
                         String targetDirPath = "C:\\targetdir";
                         Path target;
+                        Path targetFile;
+
+                        Object originalDirKey;
 
                         @BeforeEach
                         void setup() throws IOException {
                             target = fs.getPath(targetDirPath);
+                            targetFile = target.resolve("testfile.txt");
+
+                            originalDirKey = Files.readAttributes(dir, fileAttributesClassForDebug()).fileKey();
+
                             Files.copy(dir, target);
                         }
 
@@ -1062,11 +1150,9 @@ abstract class FileSystemTest {
 
                         @Test
                         void shouldNotCopyContainedFile() {
-                            Path fileInTarget = target.resolve("testfile.txt");
-
-                            assertThat(Files.exists(fileInTarget)).isFalse();
-                            assertThat(Files.isRegularFile(fileInTarget)).isFalse();
-                            assertThatThrownBy(() -> Files.size(fileInTarget)).isInstanceOf(NoSuchFileException.class);
+                            assertThat(Files.exists(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isFalse();
+                            assertThatThrownBy(() -> Files.size(targetFile)).isInstanceOf(NoSuchFileException.class);
                         }
 
                         @Test
@@ -1075,13 +1161,27 @@ abstract class FileSystemTest {
                             assertThat(Files.isRegularFile(fileInDir)).isTrue();
                             assertThat(Files.size(fileInDir)).isEqualTo(0);
                         }
+
+                        @Test
+                        void shouldCreateNewFileKeys() throws IOException {
+                            Object newDirKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+
+                            assertThat(originalDirKey).isNotNull();
+
+                            assertThat(newDirKey).isNotNull();
+
+                            assertThat(newDirKey).isNotEqualTo(originalDirKey);
+                        }
                     }
 
                     @Nested
                     class MoveDirectory {
-                        String targetDirPath = "/targetdir";
+                        String targetDirPath = "C:\\targetdir";
                         Path target;
                         Path targetFile;
+
+                        Object originalDirKey;
+                        Object originalFileKey;
 
                         @BeforeEach
                         void setup() throws IOException {
@@ -1089,6 +1189,9 @@ abstract class FileSystemTest {
 
                             target = fs.getPath(targetDirPath);
                             targetFile = target.resolve("testfile.txt");
+
+                            originalDirKey = Files.readAttributes(dir, fileAttributesClassForDebug()).fileKey();
+                            originalFileKey = Files.readAttributes(fileInDir, fileAttributesClassForDebug()).fileKey();
 
                             Files.move(dir, target);
                         }
@@ -1121,6 +1224,64 @@ abstract class FileSystemTest {
                             assertThat(Files.exists(fileInDir)).isFalse();
                             assertThat(Files.isDirectory(fileInDir)).isFalse();
                             assertThat(Files.isRegularFile(fileInDir)).isFalse();
+                        }
+
+                        @Test
+                        @DisplayName("should preserve fileKey of directory and its content after move within same filesystem")
+                        void shouldPreserveFileKey() throws IOException {
+                            Object newDirKey = Files.readAttributes(target, fileAttributesClassForDebug()).fileKey();
+                            Object newFileKey = Files.readAttributes(targetFile, fileAttributesClassForDebug()).fileKey();
+
+                            assertThat(originalDirKey).isNotNull();
+                            assertThat(originalFileKey).isNotNull();
+
+                            assertThat(newDirKey).isNotNull();
+                            assertThat(newFileKey).isNotNull();
+
+                            assertThat(newDirKey).isEqualTo(originalDirKey);
+                            assertThat(newFileKey).isEqualTo(originalFileKey);
+                        }
+                    }
+
+                    @Nested
+                    class MoveDirectoryAtomic {
+                        String targetDirPath = "C:\\targetdir";
+                        Path target;
+                        Path targetFile;
+
+                        @BeforeEach
+                        void setup() throws IOException {
+                            Files.write(fileInDir, "Hello World!".getBytes());
+
+                            target = fs.getPath(targetDirPath);
+                            Files.createDirectories(target);
+
+                            targetFile = target.resolve("testfile.txt");
+                        }
+
+                        @AfterEach
+                        void teardown() throws IOException {
+                            Files.deleteIfExists(target);
+                        }
+
+                        @Test
+                        void shouldFailToMoveDirectoryAtomic() {
+                            assertThatThrownBy(() -> Files.move(dir, target, StandardCopyOption.ATOMIC_MOVE))
+                                    .isInstanceOf(AccessDeniedException.class);
+
+                            // target hasn't been created
+                            assertThat(Files.exists(targetFile)).isFalse();
+                            assertThat(Files.isDirectory(targetFile)).isFalse();
+                            assertThat(Files.isRegularFile(targetFile)).isFalse();
+
+                            // source still exists
+                            assertThat(Files.exists(dir)).isTrue();
+                            assertThat(Files.isDirectory(dir)).isTrue();
+                            assertThat(Files.isRegularFile(dir)).isFalse();
+
+                            assertThat(Files.exists(fileInDir)).isTrue();
+                            assertThat(Files.isDirectory(fileInDir)).isFalse();
+                            assertThat(Files.isRegularFile(fileInDir)).isTrue();
                         }
                     }
 
@@ -1318,6 +1479,14 @@ abstract class FileSystemTest {
                                         assertThat(Files.isDirectory(secondFileInSubdir)).isFalse();
                                         assertThat(Files.isRegularFile(secondFileInSubdir)).isFalse();
                                     }
+                                }
+
+                                @Test
+                                void shouldFailToMoveIfNestedTargetDoesNotExist() {
+                                    Path target = fs.getPath("C:\\nested\\targetdir");
+
+                                    assertThatThrownBy(() -> Files.move(dir, target))
+                                            .isInstanceOf(NoSuchFileException.class);
                                 }
 
                                 @Test
@@ -1856,7 +2025,7 @@ abstract class FileSystemTest {
         }
     }
 
-    private static void deleteRecursivelyIfExists(Path path) throws IOException {
+    static void deleteRecursivelyIfExists(Path path) throws IOException {
         Path absolutePath = path.toAbsolutePath();
 
         if (!Files.exists(absolutePath)) {

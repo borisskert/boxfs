@@ -1,6 +1,5 @@
 package de.borisskert.boxfs.windows;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -64,7 +63,7 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-        checkAccess(dir.getParent(), AccessMode.WRITE); // TODO test
+        checkAccess(dir.getParent(), AccessMode.WRITE);
         fileTree.createDirectory(dir);
     }
 
@@ -118,20 +117,52 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             return;
         }
 
-        moveRecursively(source, target, options);
+        if (!fileTree.exists(source)) {
+            throw new NoSuchFileException(source.toString());
+        }
+
+        Path targetParent = target.getParent();
+        if (targetParent != null && !fileTree.exists(targetParent)) {
+            throw new NoSuchFileException(targetParent.toString());
+        }
+
+        CopyOptions copyOptions = CopyOptions.of(options);
+
+        if (copyOptions.atomicMove()) {
+            if (fileTree.isDirectory(source)) {
+                throw new AccessDeniedException(source.toString(), target.toString(), "Atomic move not supported for directories");
+            }
+
+            Path sourceParent = source.getParent();
+            if (!java.util.Objects.equals(sourceParent, targetParent)) {
+                throw new AccessDeniedException(source.toString(), target.toString(), "Atomic move between different parents is not supported");
+            }
+        }
+
+        if (fileTree.exists(target)) {
+            if (copyOptions.replaceExisting() || copyOptions.atomicMove()) {
+                if (fileTree.isDirectory(target) && hasChildren(target)) {
+                    throw new DirectoryNotEmptyException(target.toString());
+                }
+
+                deleteRecursively(target);
+            } else {
+                throw new FileAlreadyExistsException(target.toString());
+            }
+        }
+
+        fileTree.move(source, target);
     }
 
-    private void moveRecursively(Path source, Path target, CopyOption... options) throws IOException {
+    private void moveRecursively(Path source, Path target, CopyOptions options) throws IOException {
         Optional<BoxFsNode> node = fileTree.readNode(source);
         if (!node.isPresent()) {
             throw new NoSuchFileException(source.toString());
         }
 
-        boolean replaceExisting = Arrays.asList(options).contains(StandardCopyOption.REPLACE_EXISTING);
-
         if (node.get().attributes().isDirectory()) {
             if (fileTree.exists(target)) {
-                if (replaceExisting) {
+                if (options.replaceExisting()) {
                     if (fileTree.isDirectory(target) && hasChildren(target)) {
                         throw new DirectoryNotEmptyException(target.toString());
                     }
@@ -150,9 +181,10 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
                 }
             }
         } else {
-            copy(source, target, options);
+            copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
 
+        ((BoxFsFileSystem) source.getFileSystem()).moveFileKey(source, target);
         delete(source);
     }
 
@@ -236,13 +268,31 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
             throw new UnsupportedOperationException("PosixFileAttributes not supported");
         }
 
+        BoxFsAttributes attributes;
         if (fileTree.exists(path)) {
-            return fileTree.readNode(path).map(BoxFsNode::attributes)
-                    .map(a -> (A) a)
+            attributes = fileTree.readNode(path).map(BoxFsNode::attributes)
+                    .map(a -> (BoxFsAttributes) a)
                     .orElseThrow(() -> new RuntimeException("Not yet implemented"));
         } else {
             throw new NoSuchFileException(path.toString());
         }
+
+        if (type == BasicFileAttributes.class) {
+            return (A) attributes;
+        }
+
+        if (BoxFsDebugBasicFileAttributes.class.isAssignableFrom(type)) {
+            Object fileKey = fileTree.readNode(path).map(BoxFsNode::fileKey)
+                    .orElseThrow(() -> new RuntimeException("Not yet implemented"));
+
+            try {
+                return type.getDeclaredConstructor(BasicFileAttributes.class, Object.class).newInstance(attributes, fileKey);
+            } catch (Exception e) {
+                throw new RuntimeException("Could not create debug attributes", e);
+            }
+        }
+
+        throw new UnsupportedOperationException("Unsupported attributes type: " + type.getName());
     }
 
     @Override
@@ -265,15 +315,6 @@ class BoxFsFileSystemProvider extends FileSystemProvider {
                 .orElseThrow(() -> new NoSuchFileException(path.toString()));
 
         attributesAsMap.put(attribute, value);
-    }
-
-    boolean isAllowed(Set<PosixFilePermission> permissions, AccessMode... modes) {
-        for (AccessMode mode : modes) {
-            if (!isModeAllowed(permissions, mode)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private boolean isModeAllowed(Set<PosixFilePermission> perms, AccessMode mode) {

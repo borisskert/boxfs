@@ -95,6 +95,7 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
         delegate.move(unwrap(source), unwrap(target), options);
+        fs.moveFileKey(source, target);
     }
 
     @Override
@@ -132,6 +133,11 @@ public class WrappedFileSystemProvider extends FileSystemProvider {
             Class<A> type,
             LinkOption... options
     ) throws IOException {
+        if (WrappedBasicFileAttributes.class.isAssignableFrom(type)) {
+            BasicFileAttributes attributes = delegate.readAttributes(unwrap(path), BasicFileAttributes.class, options);
+            return (A) new WrappedBasicFileAttributes(attributes, fs.getOrCreateFileKey(path));
+        }
+
         return delegate.readAttributes(unwrap(path), type, options);
     }
 

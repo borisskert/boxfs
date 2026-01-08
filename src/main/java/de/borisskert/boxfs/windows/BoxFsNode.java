@@ -46,4 +46,20 @@ interface BoxFsNode {
     BoxFsPath path();
 
     Iterable<Path> rootDirectories();
+
+    void rename(String newName);
+
+    void rename(Path source, Path target) throws IOException;
+
+    Object fileKey();
+
+    void move(Path source, Path target) throws IOException;
+
+    void putChild(BoxFsFileName name, BoxFsNode child);
+
+    void removeChild(BoxFsNode child);
+
+    void setParent(BoxFsNode parent);
+
+    void removeFromParent();
 }

@@ -12,6 +12,8 @@ public class WrappedFileSystem extends FileSystem {
     final FileSystem defaultFileSystem;
     private final FileSystemProvider provider;
     private final Path realRoot;
+    private final java.util.Map<Path, Object> fileKeyRegistry = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong fileKeyGenerator = new java.util.concurrent.atomic.AtomicLong(0);
 
     private static final String VIRTUAL_ROOT = "C:\\"; // visible root
 
@@ -137,6 +139,29 @@ public class WrappedFileSystem extends FileSystem {
 
     public Path root() {
         return realRoot;
+    }
+
+    public Object getOrCreateFileKey(Path path) {
+        Path unwrapped = ((WrappedPath) path).unwrapped();
+        return fileKeyRegistry.computeIfAbsent(unwrapped, p -> fileKeyGenerator.incrementAndGet());
+    }
+
+    public void moveFileKey(Path source, Path target) {
+        Path unwrappedSource = ((WrappedPath) source).unwrapped();
+        Path unwrappedTarget = ((WrappedPath) target).unwrapped();
+
+        java.util.List<Path> keysToMove = fileKeyRegistry.keySet().stream()
+                .filter(p -> p.startsWith(unwrappedSource))
+                .collect(java.util.stream.Collectors.toList());
+
+        for (Path oldPath : keysToMove) {
+            Object key = fileKeyRegistry.remove(oldPath);
+            if (key != null) {
+                Path relative = unwrappedSource.relativize(oldPath);
+                Path newPath = unwrappedTarget.resolve(relative);
+                fileKeyRegistry.put(newPath, key);
+            }
+        }
     }
 
     public static FileSystem create(String path) throws IOException {

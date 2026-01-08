@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 class BoxFsDirectory implements BoxFsNode {
 
     private final BoxFsFileSystem fileSystem;
-    private final BoxFsDirectory parent;
-    private final String name;
+    private BoxFsDirectory parent;
+    private String name;
     private final Map<BoxFsFileName, BoxFsNode> children = new ConcurrentHashMap<>();
 
     private final BoxFsDirectoryAttributes attributes = new BoxFsDirectoryAttributes();
@@ -139,8 +139,8 @@ class BoxFsDirectory implements BoxFsNode {
 
     @Override
     public Optional<BoxFsNode> readNode(Path path) {
-        if (path.getNameCount() < 1) {
-            throw new IllegalArgumentException("Path must not be empty");
+        if (path == null || path.getNameCount() < 1) {
+            return Optional.of(this);
         }
 
         String name = path.getName(0).toString();
@@ -208,6 +208,64 @@ class BoxFsDirectory implements BoxFsNode {
     @Override
     public Optional<BoxFsNode> parent() {
         return Optional.ofNullable(parent);
+    }
+
+    @Override
+    public void rename(String newName) {
+        this.name = newName;
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        if (source.getNameCount() == 1) {
+            BoxFsFileName sourceFileName = BoxFsFileName.of(source.getName(0).toString());
+            BoxFsFileName targetFileName = BoxFsFileName.of(target.getName(0).toString());
+
+            BoxFsNode node = children.remove(sourceFileName);
+            node.rename(targetFileName.name());
+
+            children.put(targetFileName, node);
+        } else {
+            BoxFsFileName childName = BoxFsFileName.of(source.getName(0).toString());
+            BoxFsNode nextDirectory = children.get(childName);
+
+            nextDirectory.rename(
+                    source.subpath(1, source.getNameCount()),
+                    target.subpath(1, target.getNameCount())
+            );
+        }
+    }
+
+    @Override
+    public void move(Path source, Path target) throws IOException {
+        BoxFsNode sourceNode = readNode(source)
+                .orElseThrow(() -> new java.nio.file.NoSuchFileException(source.toString()));
+
+        Path targetParentPath = target.getParent();
+        BoxFsDirectory targetParent = targetParentPath == null ?
+                (BoxFsDirectory) readNode(null).get() :
+                (BoxFsDirectory) readNode(targetParentPath)
+                        .orElseThrow(() -> new java.nio.file.NoSuchFileException(targetParentPath.toString()));
+
+        sourceNode.parent().ifPresent(parent -> {
+            BoxFsDirectory parentDir = (BoxFsDirectory) parent;
+            parentDir.children.values().remove(sourceNode);
+        });
+
+        sourceNode.rename(target.getFileName().toString());
+        targetParent.children.put(BoxFsFileName.of(target.getFileName().toString()), sourceNode);
+
+        if (sourceNode instanceof BoxFsFile) {
+            BoxFsFile fileNode = (BoxFsFile) sourceNode;
+            fileNode.setParent(targetParent);
+        } else if (sourceNode instanceof BoxFsDirectory) {
+            BoxFsDirectory dirNode = (BoxFsDirectory) sourceNode;
+            dirNode.setParent(targetParent);
+        }
+    }
+
+    void setParent(BoxFsDirectory parent) {
+        this.parent = parent;
     }
 
     @Override

@@ -53,11 +53,6 @@ class BoxFsDirectoryAttributes extends BoxFsAttributes {
     }
 
     @Override
-    public Object fileKey() {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
     public UserPrincipal owner() {
         throw new UnsupportedOperationException("Not yet implemented");
     }

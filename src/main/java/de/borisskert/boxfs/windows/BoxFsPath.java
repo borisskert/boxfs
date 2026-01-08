@@ -68,12 +68,24 @@ class BoxFsPath implements Path {
 
     @Override
     public boolean startsWith(Path other) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (!(other instanceof BoxFsPath)) {
+            return false;
+        }
+
+        BoxFsPath otherPath = (BoxFsPath) other;
+        String thisPathStr = toLowerCase(this.path);
+        String otherPathStr = toLowerCase(otherPath.path);
+
+        if (otherPathStr.endsWith("\\")) {
+            return thisPathStr.startsWith(otherPathStr);
+        }
+
+        return thisPathStr.startsWith(otherPathStr + "\\") || thisPathStr.equals(otherPathStr);
     }
 
     @Override
     public boolean startsWith(String other) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return startsWith(new BoxFsPath(fileSystem, other));
     }
 
     @Override

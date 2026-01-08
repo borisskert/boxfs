@@ -29,7 +29,7 @@ class BoxFsTree implements BoxFsNode {
     public void createDirectory(Path path) throws IOException {
         Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+        Optional<BoxFsDrive> foundDrive = findDrive(absolutePath);
 
         if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
@@ -48,7 +48,7 @@ class BoxFsTree implements BoxFsNode {
     public void createFile(Path path) throws IOException {
         Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+        Optional<BoxFsDrive> foundDrive = findDrive(absolutePath);
 
         if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
@@ -67,7 +67,7 @@ class BoxFsTree implements BoxFsNode {
     public void delete(Path path) throws IOException {
         Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+        Optional<BoxFsDrive> foundDrive = findDrive(absolutePath);
 
         if (absolutePath.getNameCount() < 1) {
             throw new UnsupportedOperationException("Not yet implemented");
@@ -123,10 +123,10 @@ class BoxFsTree implements BoxFsNode {
     public Optional<BoxFsNode> readNode(Path path) {
         Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+        Optional<BoxFsDrive> foundDrive = findDrive(absolutePath);
 
         if (absolutePath.getNameCount() < 1) {
-            return foundDrive;
+            return foundDrive.map(d -> (BoxFsNode) d);
         }
 
         return foundDrive
@@ -137,7 +137,7 @@ class BoxFsTree implements BoxFsNode {
     public void writeContent(Path path, ByteBuffer buffer) {
         Path absolutePath = path.isAbsolute() ? path : path.toAbsolutePath();
 
-        Optional<BoxFsNode> foundDrive = findDrive(absolutePath);
+        Optional<BoxFsDrive> foundDrive = findDrive(absolutePath);
 
         if (absolutePath.getNameCount() < 1) {
             throw new IllegalArgumentException("Path must not be a drive root");
@@ -177,6 +177,70 @@ class BoxFsTree implements BoxFsNode {
     }
 
     @Override
+    public void rename(String newName) {
+        throw new UnsupportedOperationException("Cannot rename the drive root");
+    }
+
+    @Override
+    public void rename(Path source, Path target) throws IOException {
+        Path absoluteSource = source.isAbsolute() ? source : source.toAbsolutePath();
+
+        findDrive(absoluteSource).ifPresent(drive -> {
+            try {
+                drive.rename(
+                        absoluteSource.subpath(0, absoluteSource.getNameCount()),
+                        target
+                );
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public Object fileKey() {
+        throw new UnsupportedOperationException("No fileKey for BoxFsTree");
+    }
+
+    @Override
+    public void move(Path source, Path target) throws IOException {
+        Path absoluteSource = source.isAbsolute() ? source : source.toAbsolutePath();
+        Path absoluteTarget = target.isAbsolute() ? target : target.toAbsolutePath();
+
+        BoxFsDrive sourceDrive = findDrive(absoluteSource).orElseThrow(() -> new RuntimeException("Not yet implemented"));
+        BoxFsDrive targetDrive = findDrive(absoluteTarget).orElseThrow(() -> new RuntimeException("Not yet implemented"));
+
+        if (sourceDrive.hasSameDriveLetter(targetDrive)) {
+            sourceDrive.move(
+                    absoluteSource.subpath(0, absoluteSource.getNameCount()),
+                    absoluteTarget.subpath(0, absoluteTarget.getNameCount())
+            );
+        } else {
+            throw new RuntimeException("Not yet implemented");
+        }
+    }
+
+    @Override
+    public void putChild(BoxFsFileName name, BoxFsNode child) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void removeChild(BoxFsNode child) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void setParent(BoxFsNode parent) {
+        throw new UnsupportedOperationException("Tree node has no parent");
+    }
+
+    @Override
+    public void removeFromParent() {
+        throw new UnsupportedOperationException("Tree node has no parent");
+    }
+
+    @Override
     public Iterable<Path> rootDirectories() {
         return drives.values()
                 .stream()
@@ -184,7 +248,7 @@ class BoxFsTree implements BoxFsNode {
                 .collect(Collectors.toList());
     }
 
-    private Optional<BoxFsNode> findDrive(Path path) {
+    private Optional<BoxFsDrive> findDrive(Path path) {
         String absolutePath = path.toString();
 
         char driveLetter = parseDriveLetter(absolutePath);
